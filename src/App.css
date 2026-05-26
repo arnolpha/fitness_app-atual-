@@ -1,0 +1,14 @@
+body { background: #0f0f0f; color: white; margin: 0; font-family: sans-serif; }
+.container { padding: 20px; max-width: 500px; margin: auto; }
+.title { color: #4caf50; font-size: 22px; }
+.row { display: flex; gap: 10px; margin-bottom: 10px; }
+.divButton, .exerciseButton, .button { background: #1e1e1e; border: none; padding: 12px; color: white; border-radius: 8px; cursor: pointer; width: 100%; margin-top: 5px; }
+.active { background: #4caf50 !important; }
+.input { width: 100%; padding: 12px; margin-top: 10px; border-radius: 8px; border: none; box-sizing: border-box; background: #333; color: white; }
+.card { background: #1c1c1c; padding: 12px; margin-top: 8px; border-radius: 8px; font-size: 14px; }
+.graph { display: flex; align-items: flex-end; height: 200px; gap: 10px; margin-top: 20px; }
+.bar { background: #4caf50; width: 30px; display: flex; justify-content: center; }
+.barLabel { font-size: 10px; margin-top: -15px; }
+.menuItem { background: transparent; color: white; border: none; margin-top: 20px; cursor: pointer; width: 100%; padding: 10px; }
+.back { color: #4caf50; background: none; border: none; cursor: pointer; margin-top: 20px; }
+
