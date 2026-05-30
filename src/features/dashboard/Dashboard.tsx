@@ -3,10 +3,12 @@ import { motion } from 'framer-motion';
 import { useAuthStore } from '../../store/useAuthStore';
 import { getUserWorkouts } from '../../services/workoutService';
 import { getUserCheckins, createCheckin, getStreak } from '../../services/checkinService';
-import { Dumbbell, CalendarCheck, Flame, Plus, Zap } from 'lucide-react';
+import { Dumbbell, CalendarCheck, Flame, Plus } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export const Dashboard = () => {
   const { user } = useAuthStore();
+  const navigate = useNavigate();
   const [stats, setStats] = useState({ workouts: 0, checkins: 0, streak: 0 });
   const [loading, setLoading] = useState(true);
   const [checkinMsg, setCheckinMsg] = useState('');
@@ -73,10 +75,7 @@ export const Dashboard = () => {
         {statCards.map((stat) => {
           const Icon = stat.icon;
           return (
-            <div
-              key={stat.label}
-              className="bg-[#111] rounded-2xl p-4 border border-white/5"
-            >
+            <div key={stat.label} className="bg-[#111] rounded-2xl p-4 border border-white/5">
               {loading ? (
                 <div className="animate-pulse space-y-3">
                   <div className="w-8 h-8 bg-white/10 rounded-lg" />
@@ -119,7 +118,10 @@ export const Dashboard = () => {
       {/* Inicio rapido */}
       <div className="bg-[#111] rounded-2xl p-5 border border-white/5">
         <p className="text-xs font-semibold text-white/40 uppercase tracking-widest mb-4">Inicio rapido</p>
-        <button className="w-full flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-white font-semibold py-3.5 rounded-xl transition-all text-sm border border-white/5">
+        <button
+          onClick={() => navigate('/workouts')}
+          className="w-full flex items-center justify-center gap-2 bg-white/5 hover:bg-green-500 hover:text-black text-white font-bold py-3.5 rounded-xl transition-all text-sm border border-white/5"
+        >
           <Plus size={18} />
           Iniciar Treino
         </button>
