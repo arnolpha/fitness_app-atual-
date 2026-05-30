@@ -2,22 +2,29 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '../../store/useAuthStore';
 import {
-  createWorkout,
   getUserWorkouts,
+  createWorkout,
   deleteWorkout,
   Workout,
 } from '../../services/workoutService';
+import { Plus, Search, Trash2, Dumbbell } from 'lucide-react';
 
-const daysOfWeek = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+const focusOptions = ['Push', 'Pull', 'Legs', 'Upper', 'Lower', 'Cardio'];
 
 export const Workouts = () => {
   const { user } = useAuthStore();
+
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
-  const [workoutName, setWorkoutName] = useState('');
-  const [selectedDays, setSelectedDays] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
+
+  const [form, setForm] = useState({
+    name: '',
+    focus: 'Push',
+  });
 
   useEffect(() => {
     if (!user) return;
@@ -31,26 +38,22 @@ export const Workouts = () => {
     setLoading(false);
   };
 
-  const toggleDay = (day: string) => {
-    setSelectedDays((prev) =>
-      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
-    );
-  };
-
   const handleCreate = async () => {
-    if (!workoutName.trim() || !user) return;
+    if (!form.name.trim() || !user) return;
+
     setSaving(true);
+
     await createWorkout({
-      name: workoutName,
-      days: selectedDays,
-      exercises: [],
-      duration: '—',
+      ...form,
       userId: user.uid,
+      exercises: [],
+      createdAt: Date.now(),
     });
-    setWorkoutName('');
-    setSelectedDays([]);
+
+    setForm({ name: '', focus: 'Push' });
     setShowForm(false);
     setSaving(false);
+
     await loadWorkouts();
   };
 
@@ -59,28 +62,42 @@ export const Workouts = () => {
     setWorkouts((prev) => prev.filter((w) => w.id !== id));
   };
 
+  const filtered = workouts.filter((w) =>
+    w.name.toLowerCase().includes(search.toLowerCase())
+  );
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 18 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
+      transition={{ duration: 0.35 }}
     >
-      <div className="flex items-center justify-between mb-6">
+      {/* HEADER */}
+      <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold">Treinos 🏋️</h1>
-          <p className="text-white/40 text-sm mt-1">
-            {workouts.length} treinos cadastrados
+          <p className="text-white/40 text-xs font-semibold uppercase tracking-widest mb-1">
+            Planejamento
           </p>
+
+          <h1 className="text-4xl font-black text-white leading-none">
+            Treinos
+          </h1>
         </div>
+
         <button
           onClick={() => setShowForm(!showForm)}
-          className="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-all"
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${
+            showForm
+              ? 'bg-white/10 text-white'
+              : 'bg-green-500 hover:bg-green-400 text-black'
+          }`}
         >
-          {showForm ? 'Cancelar' : '+ Novo'}
+          <Plus size={16} />
+          {showForm ? 'Cancelar' : 'Novo'}
         </button>
       </div>
 
-      {/* Formulário */}
+      {/* FORM */}
       <AnimatePresence>
         {showForm && (
           <motion.div
@@ -89,119 +106,125 @@ export const Workouts = () => {
             exit={{ opacity: 0, height: 0 }}
             className="overflow-hidden mb-6"
           >
-            <div className="bg-[#111] border border-indigo-500/30 rounded-xl p-5">
-              <h2 className="text-sm font-semibold text-white/60 mb-4">
-                NOVO TREINO
+            <div className="bg-[#111] border border-white/5 rounded-2xl p-5 space-y-4">
+              <h2 className="text-xs font-bold uppercase tracking-widest text-white/60">
+                Novo treino
               </h2>
 
-              <div className="mb-4">
-                <label className="block text-xs text-white/40 mb-2">
-                  Nome do treino
-                </label>
-                <input
-                  type="text"
-                  value={workoutName}
-                  onChange={(e) => setWorkoutName(e.target.value)}
-                  placeholder="Ex: Treino A — Peito"
-                  className="w-full bg-[#0a0a0a] border border-white/10 rounded-lg px-4 py-3 text-sm text-white placeholder-white/20 outline-none"
-                />
-              </div>
+              <input
+                value={form.name}
+                onChange={(e) =>
+                  setForm({ ...form, name: e.target.value })
+                }
+                placeholder="Nome do treino (ex: Push A)"
+                className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-white/20 outline-none focus:border-green-500/40 transition"
+              />
 
-              <div className="mb-5">
-                <label className="block text-xs text-white/40 mb-2">
-                  Dias da semana
-                </label>
-                <div className="flex gap-2 flex-wrap">
-                  {daysOfWeek.map((day) => (
-                    <button
-                      key={day}
-                      onClick={() => toggleDay(day)}
-                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                        selectedDays.includes(day)
-                          ? 'bg-indigo-600 text-white'
-                          : 'bg-white/5 text-white/50 hover:text-white'
-                      }`}
-                    >
-                      {day}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <select
+                value={form.focus}
+                onChange={(e) =>
+                  setForm({ ...form, focus: e.target.value })
+                }
+                className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl px-3 py-3 text-sm text-white outline-none"
+              >
+                {focusOptions.map((f) => (
+                  <option key={f} value={f}>
+                    {f}
+                  </option>
+                ))}
+              </select>
 
               <button
                 onClick={handleCreate}
-                disabled={!workoutName.trim() || saving}
-                className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-lg transition-all"
+                disabled={!form.name.trim() || saving}
+                className="w-full bg-green-500 hover:bg-green-400 disabled:opacity-40 text-black font-bold py-3.5 rounded-xl transition"
               >
-                {saving ? 'Salvando...' : 'Criar Treino'}
+                {saving ? 'Salvando...' : 'Criar treino'}
               </button>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Loading */}
+      {/* SEARCH */}
+      <div className="relative mb-4">
+        <Search
+          size={16}
+          className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30"
+        />
+
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Buscar treino..."
+          className="w-full bg-[#111] border border-white/5 rounded-xl pl-10 pr-4 py-3 text-sm text-white placeholder-white/30 outline-none"
+        />
+      </div>
+
+      {/* LOADING */}
       {loading && (
-        <div className="space-y-3">
-          {[1, 2, 3].map((i) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {[1, 2, 3, 4].map((i) => (
             <div
               key={i}
-              className="bg-[#111] border border-white/5 rounded-xl p-5 animate-pulse h-28"
+              className="bg-[#111] border border-white/5 rounded-2xl p-4 h-24 animate-pulse"
             />
           ))}
         </div>
       )}
 
-      {/* Lista */}
+      {/* EMPTY */}
       {!loading && workouts.length === 0 && (
-        <div className="flex flex-col items-center justify-center h-48 text-white/30">
-          <p className="text-4xl mb-3">🏋️</p>
-          <p className="text-sm">Nenhum treino cadastrado ainda</p>
-          <p className="text-xs mt-1">Clique em + Novo para começar</p>
+        <div className="bg-[#111] border border-white/5 rounded-2xl p-10 flex flex-col items-center text-center text-white/30">
+          <Dumbbell size={42} className="mb-3 text-white/20" />
+          <p className="text-sm font-semibold text-white/40">
+            Nenhum treino criado
+          </p>
+          <p className="text-xs mt-1 text-white/20">
+            Crie sua rotina para começar seu planejamento
+          </p>
         </div>
       )}
 
+      {/* LIST */}
       {!loading && (
-        <div className="space-y-3">
-          {workouts.map((workout, i) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {filtered.map((w, i) => (
             <motion.div
-              key={workout.id}
+              key={w.id}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.05 }}
-              className="bg-[#111] border border-white/5 rounded-xl p-5 hover:border-indigo-500/30 transition-all"
+              transition={{ delay: i * 0.04 }}
+              className="bg-[#111] border border-white/5 rounded-2xl p-4 hover:border-green-500/20 hover:-translate-y-0.5 transition group"
             >
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-white truncate">
-                    {workout.name}
-                  </h3>
-                  <div className="flex gap-1.5 mt-2 flex-wrap">
-                    {daysOfWeek.map((day) => (
-                      <span
-                        key={day}
-                        className={`text-xs px-2 py-0.5 rounded font-medium ${
-                          workout.days.includes(day)
-                            ? 'bg-indigo-600/30 text-indigo-300'
-                            : 'bg-white/5 text-white/20'
-                        }`}
-                      >
-                        {day}
-                      </span>
-                    ))}
-                  </div>
+              <div className="flex justify-between items-start">
+                <div>
+                  <h3 className="font-bold text-white">{w.name}</h3>
+
+                  <p className="text-xs text-white/40 mt-1">
+                    Foco: {w.focus}
+                  </p>
                 </div>
+
                 <button
-                  onClick={() => handleDelete(workout.id!)}
-                  className="text-red-400/50 hover:text-red-400 text-xs transition-all shrink-0"
+                  onClick={() => handleDelete(w.id!)}
+                  className="text-white/20 hover:text-red-400 opacity-0 group-hover:opacity-100 transition"
                 >
-                  Excluir
+                  <Trash2 size={14} />
                 </button>
               </div>
 
-              <button className="mt-4 w-full bg-white/5 hover:bg-indigo-600 text-white/60 hover:text-white text-sm font-medium py-2 rounded-lg transition-all">
-                ▶ Iniciar Treino
-              </button>
+              <div className="mt-3 flex items-center justify-between">
+                <span className="text-xs bg-white/5 text-white/40 px-2 py-1 rounded-lg">
+                  {w.exercises?.length || 0} exercícios
+                </span>
+
+                <span className="text-xs text-white/30">
+                  {w.createdAt
+                    ? new Date(w.createdAt).toLocaleDateString()
+                    : ''}
+                </span>
+              </div>
             </motion.div>
           ))}
         </div>

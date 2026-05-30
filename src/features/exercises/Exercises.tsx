@@ -7,15 +7,16 @@ import {
   deleteExercise,
   Exercise,
 } from '../../services/exerciseService';
+import { Plus, Search, Trash2, Dumbbell } from 'lucide-react';
 
 const categories = ['Todos', 'Peito', 'Costas', 'Ombro', 'Biceps', 'Triceps', 'Perna', 'Abdomen', 'Cardio'];
 const difficulties = ['Iniciante', 'Intermediario', 'Avancado'];
 const equipments = ['Barra', 'Halteres', 'Polia', 'Maquina', 'Nenhum', 'Esteira', 'Outro'];
 
 const difficultyColor: Record<string, string> = {
-  'Iniciante': 'text-green-400 bg-green-400/10',
-  'Intermediario': 'text-yellow-400 bg-yellow-400/10',
-  'Avancado': 'text-red-400 bg-red-400/10',
+  Iniciante: 'text-green-400 bg-green-400/10',
+  Intermediario: 'text-yellow-400 bg-yellow-400/10',
+  Avancado: 'text-red-400 bg-red-400/10',
 };
 
 export const Exercises = () => {
@@ -26,6 +27,7 @@ export const Exercises = () => {
   const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
+
   const [form, setForm] = useState({
     name: '',
     category: 'Peito',
@@ -48,8 +50,14 @@ export const Exercises = () => {
 
   const handleCreate = async () => {
     if (!form.name.trim() || !user) return;
+
     setSaving(true);
-    await createExercise({ ...form, userId: user.uid });
+
+    await createExercise({
+      ...form,
+      userId: user.uid,
+    });
+
     setForm({
       name: '',
       category: 'Peito',
@@ -57,8 +65,10 @@ export const Exercises = () => {
       difficulty: 'Iniciante',
       equipment: 'Nenhum',
     });
+
     setShowForm(false);
     setSaving(false);
+
     await loadExercises();
   };
 
@@ -68,30 +78,47 @@ export const Exercises = () => {
   };
 
   const filtered = exercises.filter((ex) => {
-    const matchCategory = activeCategory === 'Todos' || ex.category === activeCategory;
-    const matchSearch = ex.name.toLowerCase().includes(search.toLowerCase());
+    const matchCategory =
+      activeCategory === 'Todos' || ex.category === activeCategory;
+
+    const matchSearch =
+      ex.name.toLowerCase().includes(search.toLowerCase());
+
     return matchCategory && matchSearch;
   });
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 18 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
+      transition={{ duration: 0.35 }}
     >
-      <div className="flex items-center justify-between mb-6">
+      {/* HEADER */}
+      <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold">Exercicios</h1>
-          <p className="text-white/40 text-sm mt-1">{filtered.length} exercicios encontrados</p>
+          <p className="text-white/40 text-xs font-semibold uppercase tracking-widest mb-1">
+            Biblioteca
+          </p>
+
+          <h1 className="text-4xl font-black text-white leading-none">
+            Exercícios
+          </h1>
         </div>
+
         <button
           onClick={() => setShowForm(!showForm)}
-          className="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-all"
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${
+            showForm
+              ? 'bg-white/10 text-white'
+              : 'bg-green-500 hover:bg-green-400 text-black'
+          }`}
         >
-          {showForm ? 'Cancelar' : '+ Novo'}
+          <Plus size={16} />
+          {showForm ? 'Cancelar' : 'Novo'}
         </button>
       </div>
 
+      {/* FORM */}
       <AnimatePresence>
         {showForm && (
           <motion.div
@@ -100,68 +127,69 @@ export const Exercises = () => {
             exit={{ opacity: 0, height: 0 }}
             className="overflow-hidden mb-6"
           >
-            <div className="bg-[#111] border border-indigo-500/30 rounded-xl p-5 space-y-4">
-              <h2 className="text-sm font-semibold text-white/60 uppercase tracking-wider">
-                Novo Exercicio
+            <div className="bg-[#111] border border-white/5 rounded-2xl p-5 space-y-4">
+              <h2 className="text-xs font-bold uppercase tracking-widest text-white/60">
+                Novo exercício
               </h2>
 
-              <div>
-                <label className="block text-xs text-white/40 mb-2">Nome</label>
-                <input
-                  type="text"
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  placeholder="Ex: Supino Reto"
-                  className="w-full bg-[#0a0a0a] border border-white/10 rounded-lg px-4 py-3 text-sm text-white placeholder-white/20 outline-none"
-                />
-              </div>
+              <input
+                value={form.name}
+                onChange={(e) =>
+                  setForm({ ...form, name: e.target.value })
+                }
+                placeholder="Nome do exercício"
+                className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-white/20 outline-none focus:border-green-500/40 transition"
+              />
 
-              <div>
-                <label className="block text-xs text-white/40 mb-2">Musculo</label>
-                <input
-                  type="text"
-                  value={form.muscle}
-                  onChange={(e) => setForm({ ...form, muscle: e.target.value })}
-                  placeholder="Ex: Peitoral maior"
-                  className="w-full bg-[#0a0a0a] border border-white/10 rounded-lg px-4 py-3 text-sm text-white placeholder-white/20 outline-none"
-                />
-              </div>
+              <input
+                value={form.muscle}
+                onChange={(e) =>
+                  setForm({ ...form, muscle: e.target.value })
+                }
+                placeholder="Músculo principal"
+                className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-white/20 outline-none focus:border-green-500/40 transition"
+              />
 
-              <div>
-                <label className="block text-xs text-white/40 mb-2">Categoria</label>
+              <div className="grid grid-cols-3 gap-3">
                 <select
                   value={form.category}
-                  onChange={(e) => setForm({ ...form, category: e.target.value })}
-                  className="w-full bg-[#0a0a0a] border border-white/10 rounded-lg px-4 py-3 text-sm text-white outline-none"
+                  onChange={(e) =>
+                    setForm({ ...form, category: e.target.value })
+                  }
+                  className="bg-[#0a0a0a] border border-white/10 rounded-xl px-3 py-3 text-sm text-white outline-none"
                 >
-                  {categories.filter(c => c !== 'Todos').map((cat) => (
-                    <option key={cat} value={cat}>{cat}</option>
+                  {categories.filter((c) => c !== 'Todos').map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
                   ))}
                 </select>
-              </div>
 
-              <div>
-                <label className="block text-xs text-white/40 mb-2">Dificuldade</label>
                 <select
                   value={form.difficulty}
-                  onChange={(e) => setForm({ ...form, difficulty: e.target.value })}
-                  className="w-full bg-[#0a0a0a] border border-white/10 rounded-lg px-4 py-3 text-sm text-white outline-none"
+                  onChange={(e) =>
+                    setForm({ ...form, difficulty: e.target.value })
+                  }
+                  className="bg-[#0a0a0a] border border-white/10 rounded-xl px-3 py-3 text-sm text-white outline-none"
                 >
                   {difficulties.map((d) => (
-                    <option key={d} value={d}>{d}</option>
+                    <option key={d} value={d}>
+                      {d}
+                    </option>
                   ))}
                 </select>
-              </div>
 
-              <div>
-                <label className="block text-xs text-white/40 mb-2">Equipamento</label>
                 <select
                   value={form.equipment}
-                  onChange={(e) => setForm({ ...form, equipment: e.target.value })}
-                  className="w-full bg-[#0a0a0a] border border-white/10 rounded-lg px-4 py-3 text-sm text-white outline-none"
+                  onChange={(e) =>
+                    setForm({ ...form, equipment: e.target.value })
+                  }
+                  className="bg-[#0a0a0a] border border-white/10 rounded-xl px-3 py-3 text-sm text-white outline-none"
                 >
                   {equipments.map((eq) => (
-                    <option key={eq} value={eq}>{eq}</option>
+                    <option key={eq} value={eq}>
+                      {eq}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -169,32 +197,40 @@ export const Exercises = () => {
               <button
                 onClick={handleCreate}
                 disabled={!form.name.trim() || saving}
-                className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white font-semibold py-3 rounded-lg transition-all"
+                className="w-full bg-green-500 hover:bg-green-400 disabled:opacity-40 text-black font-bold py-3.5 rounded-xl transition"
               >
-                {saving ? 'Salvando...' : 'Criar Exercicio'}
+                {saving ? 'Salvando...' : 'Criar exercício'}
               </button>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <input
-        type="text"
-        placeholder="Buscar exercicio..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="w-full bg-[#111] border border-white/10 rounded-lg px-4 py-3 text-sm text-white placeholder-white/30 outline-none mb-4"
-      />
+      {/* SEARCH */}
+      <div className="relative mb-4">
+        <Search
+          size={16}
+          className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30"
+        />
 
-      <div className="flex gap-2 overflow-x-auto pb-2 mb-6">
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Buscar exercício..."
+          className="w-full bg-[#111] border border-white/5 rounded-xl pl-10 pr-4 py-3 text-sm text-white placeholder-white/30 outline-none"
+        />
+      </div>
+
+      {/* CATEGORIES */}
+      <div className="flex gap-2 overflow-x-auto pb-2 mb-6 scrollbar-hide">
         {categories.map((cat) => (
           <button
             key={cat}
             onClick={() => setActiveCategory(cat)}
-            className={`shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
+            className={`shrink-0 px-4 py-1.5 rounded-full text-xs font-bold uppercase transition ${
               activeCategory === cat
-                ? 'bg-indigo-600 text-white'
-                : 'bg-white/5 text-white/50 hover:text-white'
+                ? 'bg-green-500 text-black'
+                : 'bg-white/5 text-white/40 hover:text-white'
             }`}
           >
             {cat}
@@ -202,25 +238,32 @@ export const Exercises = () => {
         ))}
       </div>
 
+      {/* LOADING */}
       {loading && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {[1, 2, 3, 4].map((i) => (
             <div
               key={i}
-              className="bg-[#111] border border-white/5 rounded-xl p-4 animate-pulse h-24"
+              className="bg-[#111] border border-white/5 rounded-2xl p-4 h-24 animate-pulse"
             />
           ))}
         </div>
       )}
 
+      {/* EMPTY */}
       {!loading && exercises.length === 0 && (
-        <div className="flex flex-col items-center justify-center h-48 text-white/30">
-          <p className="text-4xl mb-3">💪</p>
-          <p className="text-sm">Nenhum exercicio cadastrado ainda</p>
-          <p className="text-xs mt-1">Clique em + Novo para comecar</p>
+        <div className="bg-[#111] border border-white/5 rounded-2xl p-10 flex flex-col items-center text-center text-white/30">
+          <Dumbbell size={42} className="mb-3 text-white/20" />
+          <p className="text-sm font-semibold text-white/40">
+            Nenhum exercício ainda
+          </p>
+          <p className="text-xs mt-1 text-white/20">
+            Crie seu primeiro exercício para começar
+          </p>
         </div>
       )}
 
+      {/* LIST */}
       {!loading && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {filtered.map((ex, i) => (
@@ -228,32 +271,39 @@ export const Exercises = () => {
               key={ex.id}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.05 }}
-              className="bg-[#111] border border-white/5 rounded-xl p-4 hover:border-indigo-500/30 transition-all"
+              transition={{ delay: i * 0.04 }}
+              className="bg-[#111] border border-white/5 rounded-2xl p-4 hover:border-green-500/20 hover:-translate-y-0.5 transition group"
             >
-              <div className="flex items-start justify-between">
+              <div className="flex justify-between items-start">
                 <div>
-                  <h3 className="font-semibold text-white">{ex.name}</h3>
-                  <p className="text-white/40 text-xs mt-1">
-                    {ex.muscle} - {ex.equipment}
+                  <h3 className="font-bold text-white">{ex.name}</h3>
+                  <p className="text-xs text-white/40 mt-1">
+                    {ex.muscle} · {ex.equipment}
                   </p>
                 </div>
-                <span
-                  className={`text-xs px-2 py-1 rounded-full font-medium ${difficultyColor[ex.difficulty]}`}
-                >
-                  {ex.difficulty}
-                </span>
+
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`text-xs px-2 py-1 rounded-lg font-bold ${
+                      difficultyColor[ex.difficulty]
+                    }`}
+                  >
+                    {ex.difficulty}
+                  </span>
+
+                  <button
+                    onClick={() => handleDelete(ex.id!)}
+                    className="text-white/20 hover:text-red-400 opacity-0 group-hover:opacity-100 transition"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center justify-between mt-3">
-                <span className="text-xs bg-white/5 text-white/50 px-2 py-1 rounded-full">
+
+              <div className="mt-3">
+                <span className="text-xs bg-white/5 text-white/40 px-2 py-1 rounded-lg">
                   {ex.category}
                 </span>
-                <button
-                  onClick={() => handleDelete(ex.id!)}
-                  className="text-red-400/50 hover:text-red-400 text-xs transition-all"
-                >
-                  Excluir
-                </button>
               </div>
             </motion.div>
           ))}
