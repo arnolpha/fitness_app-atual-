@@ -5,33 +5,42 @@ import {
   createWorkout,
   getUserWorkouts,
   deleteWorkout,
+  updateWorkoutExercises,
   Workout,
 } from '../../services/workoutService';
+import { getUserExercises, Exercise } from '../../services/exerciseService';
 import { WorkoutSession } from './WorkoutSession';
-import { Plus, Trash2, Play, ClipboardList } from 'lucide-react';
+import { Plus, Trash2, Play, ClipboardList, ChevronDown, Check } from 'lucide-react';
 
 const daysOfWeek = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab', 'Dom'];
 
 export const Workouts = () => {
   const { user } = useAuthStore();
   const [workouts, setWorkouts] = useState<Workout[]>([]);
+  const [exercises, setExercises] = useState<Exercise[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [workoutName, setWorkoutName] = useState('');
   const [selectedDays, setSelectedDays] = useState<string[]>([]);
+  const [selectedExercises, setSelectedExercises] = useState<Exercise[]>([]);
+  const [showExPicker, setShowExPicker] = useState(false);
   const [saving, setSaving] = useState(false);
   const [activeSession, setActiveSession] = useState<Workout | null>(null);
   const [finished, setFinished] = useState(false);
 
   useEffect(() => {
     if (!user) return;
-    loadWorkouts();
+    loadData();
   }, [user]);
 
-  const loadWorkouts = async () => {
+  const loadData = async () => {
     setLoading(true);
-    const data = await getUserWorkouts(user!.uid);
-    setWorkouts(data);
+    const [w, ex] = await Promise.all([
+      getUserWorkouts(user!.uid),
+      getUserExercises(user!.uid),
+    ]);
+    setWorkouts(w);
+    setExercises(ex);
     setLoading(false);
   };
 
@@ -41,21 +50,31 @@ export const Workouts = () => {
     );
   };
 
+  const toggleExercise = (ex: Exercise) => {
+    setSelectedExercises((prev) =>
+      prev.find((e) => e.id === ex.id)
+        ? prev.filter((e) => e.id !== ex.id)
+        : [...prev, ex]
+    );
+  };
+
   const handleCreate = async () => {
     if (!workoutName.trim() || !user) return;
     setSaving(true);
     await createWorkout({
       name: workoutName,
       days: selectedDays,
-      exercises: [],
+      exercises: selectedExercises.map((e) => e.id!),
+      exerciseNames: selectedExercises.map((e) => e.name),
       duration: '0',
       userId: user.uid,
     });
     setWorkoutName('');
     setSelectedDays([]);
+    setSelectedExercises([]);
     setShowForm(false);
     setSaving(false);
-    await loadWorkouts();
+    await loadData();
   };
 
   const handleDelete = async (id: string) => {
@@ -94,9 +113,7 @@ export const Workouts = () => {
         <button
           onClick={() => setShowForm(!showForm)}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${
-            showForm
-              ? 'bg-white/10 text-white'
-              : 'bg-green-500 hover:bg-green-400 text-black'
+            showForm ? 'bg-white/10 text-white' : 'bg-green-500 hover:bg-green-400 text-black'
           }`}
         >
           <Plus size={16} />
@@ -104,7 +121,7 @@ export const Workouts = () => {
         </button>
       </div>
 
-      {/* Mensagem de sucesso */}
+      {/* Sucesso */}
       <AnimatePresence>
         {finished && (
           <motion.div
@@ -113,9 +130,7 @@ export const Workouts = () => {
             exit={{ opacity: 0 }}
             className="bg-green-500/10 border border-green-500/20 rounded-2xl p-4 mb-6"
           >
-            <p className="text-green-400 font-semibold text-sm">
-              Treino finalizado e salvo!
-            </p>
+            <p className="text-green-400 font-semibold text-sm">Treino finalizado e salvo!</p>
           </motion.div>
         )}
       </AnimatePresence>
@@ -130,10 +145,9 @@ export const Workouts = () => {
             className="overflow-hidden mb-6"
           >
             <div className="bg-[#111] border border-green-500/20 rounded-2xl p-5 space-y-4">
-              <h2 className="text-sm font-bold text-white uppercase tracking-widest">
-                Novo Treino
-              </h2>
+              <h2 className="text-sm font-bold text-white uppercase tracking-widest">Novo Treino</h2>
 
+              {/* Nome */}
               <div>
                 <label className="block text-xs text-white/40 font-medium mb-2">Nome</label>
                 <input
@@ -145,6 +159,7 @@ export const Workouts = () => {
                 />
               </div>
 
+              {/* Dias */}
               <div>
                 <label className="block text-xs text-white/40 font-medium mb-2">Dias da semana</label>
                 <div className="flex gap-2 flex-wrap">
@@ -162,6 +177,72 @@ export const Workouts = () => {
                     </button>
                   ))}
                 </div>
+              </div>
+
+              {/* Exercicios */}
+              <div>
+                <label className="block text-xs text-white/40 font-medium mb-2">
+                  Exercicios ({selectedExercises.length} selecionados)
+                </label>
+                <button
+                  onClick={() => setShowExPicker(!showExPicker)}
+                  className="w-full flex items-center justify-between bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-3 text-sm text-white/50 hover:text-white transition-colors"
+                >
+                  <span>Selecionar exercicios</span>
+                  <ChevronDown size={16} />
+                </button>
+
+                <AnimatePresence>
+                  {showExPicker && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="bg-[#0a0a0a] border border-white/5 rounded-xl mt-2 max-h-48 overflow-y-auto">
+                        {exercises.length === 0 ? (
+                          <p className="text-white/30 text-xs text-center py-6">
+                            Nenhum exercicio cadastrado. Va em Exercicios e adicione primeiro.
+                          </p>
+                        ) : (
+                          exercises.map((ex) => {
+                            const selected = selectedExercises.find((e) => e.id === ex.id);
+                            return (
+                              <button
+                                key={ex.id}
+                                onClick={() => toggleExercise(ex)}
+                                className="w-full flex items-center justify-between px-4 py-3 hover:bg-white/5 transition-colors border-b border-white/5 last:border-0"
+                              >
+                                <div className="text-left">
+                                  <p className="text-white text-sm font-semibold">{ex.name}</p>
+                                  <p className="text-white/30 text-xs">{ex.category}</p>
+                                </div>
+                                {selected && (
+                                  <Check size={16} className="text-green-400 shrink-0" />
+                                )}
+                              </button>
+                            );
+                          })
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Exercicios selecionados */}
+                {selectedExercises.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {selectedExercises.map((ex) => (
+                      <span
+                        key={ex.id}
+                        className="text-xs bg-green-500/10 text-green-400 px-2.5 py-1 rounded-lg font-semibold"
+                      >
+                        {ex.name}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <button
@@ -205,7 +286,7 @@ export const Workouts = () => {
               transition={{ delay: i * 0.05 }}
               className="bg-[#111] border border-white/5 rounded-2xl p-5 hover:border-green-500/20 transition-all"
             >
-              <div className="flex items-start justify-between gap-4 mb-4">
+              <div className="flex items-start justify-between gap-4 mb-3">
                 <div className="flex-1 min-w-0">
                   <h3 className="font-black text-white text-lg truncate">{workout.name}</h3>
                   <div className="flex gap-1.5 mt-2 flex-wrap">
@@ -222,6 +303,17 @@ export const Workouts = () => {
                       </span>
                     ))}
                   </div>
+
+                  {/* Exercicios do treino */}
+                  {workout.exerciseNames && workout.exerciseNames.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-3">
+                      {workout.exerciseNames.map((name, idx) => (
+                        <span key={idx} className="text-xs bg-white/5 text-white/40 px-2 py-0.5 rounded-lg">
+                          {name}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <button
                   onClick={() => handleDelete(workout.id!)}
