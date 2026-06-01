@@ -5,6 +5,7 @@ import {
   query,
   where,
   serverTimestamp,
+  orderBy,
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 
@@ -33,7 +34,11 @@ export const saveSession = async (session: Omit<WorkoutSession, 'id'>) => {
 };
 
 export const getUserSessions = async (userId: string): Promise<WorkoutSession[]> => {
-  const q = query(collection(db, 'sessions'), where('userId', '==', userId));
+  const q = query(
+    collection(db, 'sessions'),
+    where('userId', '==', userId),
+    orderBy('createdAt', 'asc')
+  );
   const snapshot = await getDocs(q);
   return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as WorkoutSession));
 };
