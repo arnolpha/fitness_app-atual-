@@ -1,64 +1,32 @@
-import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { useAuthStore } from '../../store/useAuthStore';
-import { createCheckin, getUserCheckins, getStreak, Checkin as CheckinType } from '../../services/checkinService';
 import { CalendarCheck, Flame, Check } from 'lucide-react';
+import { useCheckin } from './hooks/useCheckin';
+import { Card, SectionHeader, Button, Skeleton } from '../../components/ui';
 
 const getDaysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate();
 const getFirstDayOfMonth = (year: number, month: number) => new Date(year, month, 1).getDay();
 
+const monthNames = [
+  'Janeiro', 'Fevereiro', 'Marco', 'Abril', 'Maio', 'Junho',
+  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+];
+
 export const Checkin = () => {
-  const { user } = useAuthStore();
-  const [checkins, setCheckins] = useState<CheckinType[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [checkinMsg, setCheckinMsg] = useState('');
-  const [checkinLoading, setCheckinLoading] = useState(false);
-  const [checkedToday, setCheckedToday] = useState(false);
+  const { checkins, loading, checking, checkedToday, message, streak, thisMonthCount, checkin } = useCheckin();
 
   const today = new Date();
   const year = today.getFullYear();
   const month = today.getMonth();
   const todayStr = today.toISOString().split('T')[0];
-
-  const monthNames = [
-    'Janeiro', 'Fevereiro', 'Marco', 'Abril', 'Maio', 'Junho',
-    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
-  ];
-
-  useEffect(() => {
-    if (!user) return;
-    loadCheckins();
-  }, [user]);
-
-  const loadCheckins = async () => {
-    setLoading(true);
-    const data = await getUserCheckins(user!.uid);
-    setCheckins(data);
-    setCheckedToday(data.some((c) => c.date === todayStr));
-    setLoading(false);
-  };
-
-  const handleCheckin = async () => {
-    if (!user) return;
-    setCheckinLoading(true);
-    const result = await createCheckin(user.uid);
-    if (result === 'already_checked') {
-      setCheckinMsg('Voce ja fez check-in hoje!');
-    } else {
-      setCheckinMsg('Check-in realizado!');
-      await loadCheckins();
-    }
-    setCheckinLoading(false);
-    setTimeout(() => setCheckinMsg(''), 3000);
-  };
-
   const checkinDates = new Set(checkins.map((c) => c.date));
-  const streak = getStreak(checkins);
   const daysInMonth = getDaysInMonth(year, month);
   const firstDay = getFirstDayOfMonth(year, month);
-  const thisMonthCount = checkins.filter(c =>
-    c.date.startsWith(`${year}-${String(month + 1).padStart(2, '0')}`)
-  ).length;
+
+  const statCards = [
+    { label: 'Total', value: checkins.length.toString(), icon: CalendarCheck, color: 'text-green-400', bg: 'bg-green-500/10' },
+    { label: 'Sequencia', value: `${streak}d`, icon: Flame, color: 'text-orange-400', bg: 'bg-orange-500/10' },
+    { label: 'Este mes', value: thisMonthCount.toString(), icon: CalendarCheck, color: 'text-blue-400', bg: 'bg-blue-500/10' },
+  ];
 
   return (
     <motion.div
@@ -66,53 +34,43 @@ export const Checkin = () => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
     >
-      {/* Header */}
-      <div className="mb-8">
-        <p className="text-white/40 text-xs font-semibold uppercase tracking-widest mb-1">Presenca diaria</p>
-        <h1 className="text-4xl font-black text-white leading-none">Check-in</h1>
-      </div>
+      <SectionHeader title="Check-in" subtitle="Presenca diaria" />
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3 mb-6">
-        {[
-          { label: 'Total', value: checkins.length.toString(), icon: CalendarCheck, color: 'text-green-400', bg: 'bg-green-500/10' },
-          { label: 'Sequencia', value: `${streak}d`, icon: Flame, color: 'text-orange-400', bg: 'bg-orange-500/10' },
-          { label: 'Este mes', value: thisMonthCount.toString(), icon: CalendarCheck, color: 'text-blue-400', bg: 'bg-blue-500/10' },
-        ].map((stat) => {
+        {statCards.map((stat) => {
           const Icon = stat.icon;
           return (
-            <div key={stat.label} className="bg-[#111] rounded-2xl p-4 border border-white/5">
+            <Card key={stat.label}>
               <div className={`w-8 h-8 ${stat.bg} rounded-lg flex items-center justify-center mb-3`}>
                 <Icon size={16} className={stat.color} />
               </div>
               <p className="text-2xl font-black text-white">{stat.value}</p>
               <p className="text-white/40 text-xs font-medium mt-1">{stat.label}</p>
-            </div>
+            </Card>
           );
         })}
       </div>
 
       {/* Botao */}
-      <div className="bg-[#111] border border-white/5 rounded-2xl p-5 mb-6">
-        {checkinMsg && (
-          <p className="text-sm text-center mb-3 text-green-400 font-semibold">{checkinMsg}</p>
+      <Card className="mb-6">
+        {message && (
+          <p className="text-sm text-center mb-3 text-green-400 font-semibold">{message}</p>
         )}
-        <button
-          onClick={handleCheckin}
-          disabled={checkinLoading || checkedToday}
-          className={`w-full flex items-center justify-center gap-2 font-bold py-4 rounded-xl transition-all ${
-            checkedToday
-              ? 'bg-green-500/15 text-green-400 cursor-default'
-              : 'bg-green-500 hover:bg-green-400 text-black'
-          }`}
+        <Button
+          onClick={checkin}
+          disabled={checkedToday}
+          loading={checking}
+          fullWidth
+          variant={checkedToday ? 'secondary' : 'primary'}
         >
           {checkedToday && <Check size={18} />}
-          {checkedToday ? 'Check-in feito hoje!' : checkinLoading ? 'Registrando...' : 'Treinei hoje'}
-        </button>
-      </div>
+          {checkedToday ? 'Check-in feito hoje!' : 'Treinei hoje'}
+        </Button>
+      </Card>
 
       {/* Calendario */}
-      <div className="bg-[#111] border border-white/5 rounded-2xl p-5">
+      <Card>
         <p className="text-xs font-bold text-white/40 uppercase tracking-widest mb-4">
           {monthNames[month]} {year}
         </p>
@@ -124,7 +82,7 @@ export const Checkin = () => {
         </div>
 
         {loading ? (
-          <div className="h-40 animate-pulse bg-white/5 rounded-xl" />
+          <Skeleton className="h-40" />
         ) : (
           <div className="grid grid-cols-7 gap-1">
             {Array.from({ length: firstDay }).map((_, i) => (
@@ -141,9 +99,9 @@ export const Checkin = () => {
                   key={day}
                   className={`aspect-square flex items-center justify-center rounded-lg text-xs font-bold transition-all ${
                     isChecked
-                      ? 'bg-green-500 text-black'
+                      ? 'bg-primary text-black'
                       : isToday
-                      ? 'border border-green-500/50 text-green-400'
+                      ? 'border border-primary/50 text-green-400'
                       : 'text-white/20'
                   }`}
                 >
@@ -153,7 +111,7 @@ export const Checkin = () => {
             })}
           </div>
         )}
-      </div>
+      </Card>
     </motion.div>
   );
 };
