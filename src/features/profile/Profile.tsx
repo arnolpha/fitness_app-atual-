@@ -10,6 +10,7 @@ import {
   User, Mail, ShieldCheck, Dumbbell, CalendarCheck,
   Flame, Pencil, Check, X, MapPin, Scale, Ruler, Calendar,
 } from 'lucide-react';
+import { Card, SectionHeader, Button, Input } from '../../components/ui';
 
 const sexOptions = ['Masculino', 'Feminino', 'Prefiro nao informar'];
 const brazilStates = [
@@ -51,9 +52,7 @@ export const Profile = () => {
       checkins: checkins.length,
       streak: getStreak(checkins),
     });
-    if (profile) {
-      setForm({ ...form, ...profile });
-    }
+    if (profile) setForm((prev) => ({ ...prev, ...profile }));
   };
 
   const handleSave = async () => {
@@ -78,14 +77,16 @@ export const Profile = () => {
   };
 
   const initials = (user?.displayName || user?.email || 'U')
-    .split(' ')
-    .map((n) => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
+    .split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
 
   const firstName = user?.displayName?.split(' ')[0] || user?.email?.split('@')[0] || 'Atleta';
   const age = form.birthDate ? getAge(form.birthDate) : null;
+
+  const statCards = [
+    { label: 'Treinos', value: stats.workouts.toString(), icon: Dumbbell, color: 'text-green-400', bg: 'bg-green-500/10' },
+    { label: 'Check-ins', value: stats.checkins.toString(), icon: CalendarCheck, color: 'text-blue-400', bg: 'bg-blue-500/10' },
+    { label: 'Sequencia', value: `${stats.streak}d`, icon: Flame, color: 'text-orange-400', bg: 'bg-orange-500/10' },
+  ];
 
   return (
     <motion.div
@@ -94,15 +95,11 @@ export const Profile = () => {
       transition={{ duration: 0.4 }}
       className="max-w-lg mx-auto"
     >
-      {/* Header */}
-      <div className="mb-8">
-        <p className="text-white/40 text-xs font-semibold uppercase tracking-widest mb-1">Minha conta</p>
-        <h1 className="text-4xl font-black text-white leading-none">Perfil</h1>
-      </div>
+      <SectionHeader title="Perfil" subtitle="Minha conta" />
 
       {/* Avatar */}
       <div className="flex items-center gap-5 mb-8">
-        <div className="w-20 h-20 rounded-2xl bg-green-500 flex items-center justify-center text-2xl font-black text-black">
+        <div className="w-20 h-20 rounded-2xl bg-primary flex items-center justify-center text-2xl font-black text-black">
           {initials}
         </div>
         <div>
@@ -115,234 +112,206 @@ export const Profile = () => {
                 {form.city}{form.state ? `, ${form.state}` : ''}
               </span>
             )}
-            {age && (
-              <span className="text-white/30 text-xs">{age} anos</span>
-            )}
+            {age && <span className="text-white/30 text-xs">{age} anos</span>}
           </div>
-          {saved && (
-            <p className="text-green-400 text-xs mt-1 font-semibold">Perfil atualizado!</p>
-          )}
+          {saved && <p className="text-green-400 text-xs mt-1 font-semibold">Perfil atualizado!</p>}
         </div>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3 mb-6">
-        {[
-          { label: 'Treinos', value: stats.workouts.toString(), icon: Dumbbell, color: 'text-green-400', bg: 'bg-green-500/10' },
-          { label: 'Check-ins', value: stats.checkins.toString(), icon: CalendarCheck, color: 'text-blue-400', bg: 'bg-blue-500/10' },
-          { label: 'Sequencia', value: `${stats.streak}d`, icon: Flame, color: 'text-orange-400', bg: 'bg-orange-500/10' },
-        ].map((stat) => {
+        {statCards.map((stat) => {
           const Icon = stat.icon;
           return (
-            <div key={stat.label} className="bg-[#111] rounded-2xl p-4 border border-white/5 text-center">
+            <Card key={stat.label} className="text-center">
               <div className={`w-8 h-8 ${stat.bg} rounded-lg flex items-center justify-center mb-3 mx-auto`}>
                 <Icon size={16} className={stat.color} />
               </div>
               <p className="text-2xl font-black text-white">{stat.value}</p>
               <p className="text-white/40 text-xs font-medium mt-1">{stat.label}</p>
-            </div>
+            </Card>
           );
         })}
       </div>
 
-      {/* Informacoes pessoais */}
-      <div className="bg-[#111] border border-white/5 rounded-2xl p-5 mb-4">
-        <p className="text-xs font-bold text-white/40 uppercase tracking-widest mb-4">
+      {/* Informacoes */}
+      <Card className="mb-4 space-y-4">
+        <p className="text-xs font-bold text-white/40 uppercase tracking-widest">
           Informacoes pessoais
         </p>
 
-        <div className="space-y-4">
-          {/* Nome */}
+        {/* Nome */}
+        {editing ? (
+          <Input
+            label="Nome"
+            value={form.displayName || ''}
+            onChange={(v) => setForm({ ...form, displayName: v })}
+            icon={<User size={14} />}
+          />
+        ) : (
           <div>
             <label className="flex items-center gap-2 text-xs text-white/40 font-medium mb-2">
               <User size={12} /> Nome
             </label>
+            <p className="text-white text-sm py-3 px-4 bg-white/5 rounded-xl">{form.displayName || '—'}</p>
+          </div>
+        )}
+
+        {/* Email */}
+        <div>
+          <label className="flex items-center gap-2 text-xs text-white/40 font-medium mb-2">
+            <Mail size={12} /> Email
+          </label>
+          <p className="text-white/50 text-sm py-3 px-4 bg-white/5 rounded-xl">{user?.email}</p>
+        </div>
+
+        {/* Email verificado */}
+        <div>
+          <label className="flex items-center gap-2 text-xs text-white/40 font-medium mb-2">
+            <ShieldCheck size={12} /> Email verificado
+          </label>
+          <p className="text-sm py-3 px-4 bg-white/5 rounded-xl">
+            {user?.emailVerified
+              ? <span className="text-green-400 font-semibold">Verificado</span>
+              : <span className="text-yellow-400 font-semibold">Nao verificado</span>}
+          </p>
+        </div>
+
+        {/* Sexo */}
+        <div>
+          <label className="flex items-center gap-2 text-xs text-white/40 font-medium mb-2">
+            <User size={12} /> Sexo
+          </label>
+          {editing ? (
+            <select
+              value={form.sex}
+              onChange={(e) => setForm({ ...form, sex: e.target.value })}
+              className="w-full bg-background border border-primary/50 rounded-xl px-4 py-3 text-sm text-white outline-none"
+            >
+              <option value="">Selecionar</option>
+              {sexOptions.map((s) => <option key={s} value={s}>{s}</option>)}
+            </select>
+          ) : (
+            <p className="text-white text-sm py-3 px-4 bg-white/5 rounded-xl">{form.sex || '—'}</p>
+          )}
+        </div>
+
+        {/* Data de nascimento */}
+        <div>
+          <label className="flex items-center gap-2 text-xs text-white/40 font-medium mb-2">
+            <Calendar size={12} /> Data de nascimento
+          </label>
+          {editing ? (
+            <input
+              type="date"
+              value={form.birthDate}
+              onChange={(e) => setForm({ ...form, birthDate: e.target.value })}
+              className="w-full bg-background border border-primary/50 rounded-xl px-4 py-3 text-sm text-white outline-none"
+            />
+          ) : (
+            <p className="text-white text-sm py-3 px-4 bg-white/5 rounded-xl">
+              {form.birthDate
+                ? `${new Date(form.birthDate).toLocaleDateString('pt-BR')} ${age ? `(${age} anos)` : ''}`
+                : '—'}
+            </p>
+          )}
+        </div>
+
+        {/* Altura e Peso */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="flex items-center gap-2 text-xs text-white/40 font-medium mb-2">
+              <Ruler size={12} /> Altura (cm)
+            </label>
+            {editing ? (
+              <input
+                type="number"
+                value={form.height || ''}
+                onChange={(e) => setForm({ ...form, height: Number(e.target.value) })}
+                placeholder="175"
+                className="w-full bg-background border border-primary/50 rounded-xl px-4 py-3 text-sm text-white outline-none"
+              />
+            ) : (
+              <p className="text-white text-sm py-3 px-4 bg-white/5 rounded-xl">
+                {form.height ? `${form.height} cm` : '—'}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label className="flex items-center gap-2 text-xs text-white/40 font-medium mb-2">
+              <Scale size={12} /> Peso (kg)
+            </label>
+            {editing ? (
+              <input
+                type="number"
+                value={form.weight || ''}
+                onChange={(e) => setForm({ ...form, weight: Number(e.target.value) })}
+                placeholder="70"
+                className="w-full bg-background border border-primary/50 rounded-xl px-4 py-3 text-sm text-white outline-none"
+              />
+            ) : (
+              <p className="text-white text-sm py-3 px-4 bg-white/5 rounded-xl">
+                {form.weight ? `${form.weight} kg` : '—'}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Localizacao */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="flex items-center gap-2 text-xs text-white/40 font-medium mb-2">
+              <MapPin size={12} /> Cidade
+            </label>
             {editing ? (
               <input
                 type="text"
-                value={form.displayName}
-                onChange={(e) => setForm({ ...form, displayName: e.target.value })}
-                className="w-full bg-[#0a0a0a] border border-green-500/50 rounded-xl px-4 py-3 text-sm text-white outline-none"
+                value={form.city}
+                onChange={(e) => setForm({ ...form, city: e.target.value })}
+                placeholder="Sao Paulo"
+                className="w-full bg-background border border-primary/50 rounded-xl px-4 py-3 text-sm text-white outline-none"
               />
             ) : (
-              <p className="text-white text-sm py-3 px-4 bg-white/5 rounded-xl">
-                {form.displayName || '—'}
-              </p>
+              <p className="text-white text-sm py-3 px-4 bg-white/5 rounded-xl">{form.city || '—'}</p>
             )}
           </div>
 
-          {/* Email */}
           <div>
             <label className="flex items-center gap-2 text-xs text-white/40 font-medium mb-2">
-              <Mail size={12} /> Email
-            </label>
-            <p className="text-white/50 text-sm py-3 px-4 bg-white/5 rounded-xl">{user?.email}</p>
-          </div>
-
-          {/* Email verificado */}
-          <div>
-            <label className="flex items-center gap-2 text-xs text-white/40 font-medium mb-2">
-              <ShieldCheck size={12} /> Email verificado
-            </label>
-            <p className="text-sm py-3 px-4 bg-white/5 rounded-xl">
-              {user?.emailVerified ? (
-                <span className="text-green-400 font-semibold">Verificado</span>
-              ) : (
-                <span className="text-yellow-400 font-semibold">Nao verificado</span>
-              )}
-            </p>
-          </div>
-
-          {/* Sexo */}
-          <div>
-            <label className="flex items-center gap-2 text-xs text-white/40 font-medium mb-2">
-              <User size={12} /> Sexo
+              <MapPin size={12} /> Estado
             </label>
             {editing ? (
               <select
-                value={form.sex}
-                onChange={(e) => setForm({ ...form, sex: e.target.value })}
-                className="w-full bg-[#0a0a0a] border border-green-500/50 rounded-xl px-4 py-3 text-sm text-white outline-none"
+                value={form.state}
+                onChange={(e) => setForm({ ...form, state: e.target.value })}
+                className="w-full bg-background border border-primary/50 rounded-xl px-4 py-3 text-sm text-white outline-none"
               >
-                <option value="">Selecionar</option>
-                {sexOptions.map((s) => <option key={s} value={s}>{s}</option>)}
+                <option value="">UF</option>
+                {brazilStates.map((s) => <option key={s} value={s}>{s}</option>)}
               </select>
             ) : (
-              <p className="text-white text-sm py-3 px-4 bg-white/5 rounded-xl">
-                {form.sex || '—'}
-              </p>
+              <p className="text-white text-sm py-3 px-4 bg-white/5 rounded-xl">{form.state || '—'}</p>
             )}
-          </div>
-
-          {/* Data de nascimento */}
-          <div>
-            <label className="flex items-center gap-2 text-xs text-white/40 font-medium mb-2">
-              <Calendar size={12} /> Data de nascimento
-            </label>
-            {editing ? (
-              <input
-                type="date"
-                value={form.birthDate}
-                onChange={(e) => setForm({ ...form, birthDate: e.target.value })}
-                className="w-full bg-[#0a0a0a] border border-green-500/50 rounded-xl px-4 py-3 text-sm text-white outline-none"
-              />
-            ) : (
-              <p className="text-white text-sm py-3 px-4 bg-white/5 rounded-xl">
-                {form.birthDate ? `${new Date(form.birthDate).toLocaleDateString('pt-BR')} ${age ? `(${age} anos)` : ''}` : '—'}
-              </p>
-            )}
-          </div>
-
-          {/* Altura e Peso */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="flex items-center gap-2 text-xs text-white/40 font-medium mb-2">
-                <Ruler size={12} /> Altura (cm)
-              </label>
-              {editing ? (
-                <input
-                  type="number"
-                  value={form.height || ''}
-                  onChange={(e) => setForm({ ...form, height: Number(e.target.value) })}
-                  placeholder="175"
-                  className="w-full bg-[#0a0a0a] border border-green-500/50 rounded-xl px-4 py-3 text-sm text-white outline-none"
-                />
-              ) : (
-                <p className="text-white text-sm py-3 px-4 bg-white/5 rounded-xl">
-                  {form.height ? `${form.height} cm` : '—'}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className="flex items-center gap-2 text-xs text-white/40 font-medium mb-2">
-                <Scale size={12} /> Peso (kg)
-              </label>
-              {editing ? (
-                <input
-                  type="number"
-                  value={form.weight || ''}
-                  onChange={(e) => setForm({ ...form, weight: Number(e.target.value) })}
-                  placeholder="70"
-                  className="w-full bg-[#0a0a0a] border border-green-500/50 rounded-xl px-4 py-3 text-sm text-white outline-none"
-                />
-              ) : (
-                <p className="text-white text-sm py-3 px-4 bg-white/5 rounded-xl">
-                  {form.weight ? `${form.weight} kg` : '—'}
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Localizacao */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="flex items-center gap-2 text-xs text-white/40 font-medium mb-2">
-                <MapPin size={12} /> Cidade
-              </label>
-              {editing ? (
-                <input
-                  type="text"
-                  value={form.city}
-                  onChange={(e) => setForm({ ...form, city: e.target.value })}
-                  placeholder="Sao Paulo"
-                  className="w-full bg-[#0a0a0a] border border-green-500/50 rounded-xl px-4 py-3 text-sm text-white outline-none"
-                />
-              ) : (
-                <p className="text-white text-sm py-3 px-4 bg-white/5 rounded-xl">
-                  {form.city || '—'}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className="flex items-center gap-2 text-xs text-white/40 font-medium mb-2">
-                <MapPin size={12} /> Estado
-              </label>
-              {editing ? (
-                <select
-                  value={form.state}
-                  onChange={(e) => setForm({ ...form, state: e.target.value })}
-                  className="w-full bg-[#0a0a0a] border border-green-500/50 rounded-xl px-4 py-3 text-sm text-white outline-none"
-                >
-                  <option value="">UF</option>
-                  {brazilStates.map((s) => <option key={s} value={s}>{s}</option>)}
-                </select>
-              ) : (
-                <p className="text-white text-sm py-3 px-4 bg-white/5 rounded-xl">
-                  {form.state || '—'}
-                </p>
-              )}
-            </div>
           </div>
         </div>
-      </div>
+      </Card>
 
       {/* Botoes */}
       {editing ? (
         <div className="flex gap-3">
-          <button
-            onClick={() => setEditing(false)}
-            className="flex-1 flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-white text-sm font-bold py-3.5 rounded-xl transition-all"
-          >
+          <Button onClick={() => setEditing(false)} variant="secondary" fullWidth>
             <X size={16} /> Cancelar
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="flex-1 flex items-center justify-center gap-2 bg-green-500 hover:bg-green-400 disabled:opacity-50 text-black text-sm font-bold py-3.5 rounded-xl transition-all"
-          >
+          </Button>
+          <Button onClick={handleSave} loading={saving} fullWidth>
             <Check size={16} />
             {saving ? 'Salvando...' : 'Salvar'}
-          </button>
+          </Button>
         </div>
       ) : (
-        <button
-          onClick={() => setEditing(true)}
-          className="w-full flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-white text-sm font-bold py-3.5 rounded-xl transition-all border border-white/5"
-        >
+        <Button onClick={() => setEditing(true)} variant="secondary" fullWidth>
           <Pencil size={16} /> Editar perfil
-        </button>
+        </Button>
       )}
     </motion.div>
   );
