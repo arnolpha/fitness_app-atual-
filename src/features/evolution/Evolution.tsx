@@ -5,6 +5,7 @@ import { getUserCheckins, getStreak } from '../../services/checkinService';
 import { getUserWorkouts } from '../../services/workoutService';
 import { getUserSessions, WorkoutSession } from '../../services/sessionService';
 import { TrendingUp, Dumbbell, CalendarCheck, Flame, ChevronDown } from 'lucide-react';
+import { Card, SectionHeader, Skeleton } from '../../components/ui';
 import {
   LineChart,
   Line,
@@ -45,7 +46,6 @@ export const Evolution = () => {
     setTotalWorkouts(workouts.length);
     setSessions(sessionData);
 
-    // Grafico de checkins por mes
     const monthMap: Record<string, number> = {};
     checkins.forEach((c) => {
       const month = c.date.slice(0, 7);
@@ -65,7 +65,6 @@ export const Evolution = () => {
       }))
     );
 
-    // Lista de exercicios das sessoes
     const exNames = new Set<string>();
     sessionData.forEach((s) => s.series.forEach((serie) => exNames.add(serie.exerciseName)));
     const list = Array.from(exNames);
@@ -75,7 +74,6 @@ export const Evolution = () => {
     setLoading(false);
   };
 
-  // Dados do grafico de evolucao por exercicio
   const exerciseChartData = sessions
     .filter((s) => s.series.some((serie) => serie.exerciseName === selectedExercise))
     .map((s) => {
@@ -94,68 +92,63 @@ export const Evolution = () => {
     { label: 'Sequencia', value: `${streak}d`, icon: Flame, color: 'text-orange-400', bg: 'bg-orange-500/10' },
   ];
 
+  const tooltipStyle = {
+    backgroundColor: '#1a1a1a',
+    border: '1px solid #22c55e20',
+    borderRadius: '12px',
+    color: '#fff',
+    fontSize: '12px',
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
     >
-      {/* Header */}
-      <div className="mb-8">
-        <p className="text-white/40 text-xs font-semibold uppercase tracking-widest mb-1">Seu progresso</p>
-        <h1 className="text-4xl font-black text-white leading-none">Evolucao</h1>
-      </div>
+      <SectionHeader title="Evolucao" subtitle="Seu progresso" />
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3 mb-6">
-        {statCards.map((stat) => {
-          const Icon = stat.icon;
-          return (
-            <div key={stat.label} className="bg-[#111] rounded-2xl p-4 border border-white/5">
-              {loading ? (
-                <div className="animate-pulse space-y-3">
-                  <div className="w-8 h-8 bg-white/10 rounded-lg" />
-                  <div className="h-7 w-12 bg-white/10 rounded" />
-                  <div className="h-3 w-16 bg-white/10 rounded" />
+        {loading ? (
+          <Skeleton className="h-28" count={3} />
+        ) : (
+          statCards.map((stat) => {
+            const Icon = stat.icon;
+            return (
+              <Card key={stat.label}>
+                <div className={`w-8 h-8 ${stat.bg} rounded-lg flex items-center justify-center mb-3`}>
+                  <Icon size={16} className={stat.color} />
                 </div>
-              ) : (
-                <>
-                  <div className={`w-8 h-8 ${stat.bg} rounded-lg flex items-center justify-center mb-3`}>
-                    <Icon size={16} className={stat.color} />
-                  </div>
-                  <p className="text-2xl font-black text-white">{stat.value}</p>
-                  <p className="text-white/40 text-xs font-medium mt-1">{stat.label}</p>
-                </>
-              )}
-            </div>
-          );
-        })}
+                <p className="text-2xl font-black text-white">{stat.value}</p>
+                <p className="text-white/40 text-xs font-medium mt-1">{stat.label}</p>
+              </Card>
+            );
+          })
+        )}
       </div>
 
       {/* Grafico evolucao por exercicio */}
-      <div className="bg-[#111] border border-white/5 rounded-2xl p-5 mb-4">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <TrendingUp size={16} className="text-green-400" />
-            <p className="text-xs font-bold text-white/40 uppercase tracking-widest">
-              Evolucao por exercicio
-            </p>
-          </div>
+      <Card className="mb-4">
+        <div className="flex items-center gap-2 mb-4">
+          <TrendingUp size={16} className="text-green-400" />
+          <p className="text-xs font-bold text-white/40 uppercase tracking-widest">
+            Evolucao por exercicio
+          </p>
         </div>
 
-        {/* Seletor de exercicio */}
         {exerciseList.length > 0 && (
           <div className="relative mb-4">
             <button
               onClick={() => setShowExPicker(!showExPicker)}
-              className="w-full flex items-center justify-between bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-3 text-sm text-white"
+              className="w-full flex items-center justify-between bg-background border border-white/10 rounded-xl px-4 py-3 text-sm text-white"
             >
               <span>{selectedExercise || 'Selecionar exercicio'}</span>
               <ChevronDown size={16} className="text-white/30" />
             </button>
 
             {showExPicker && (
-              <div className="absolute top-full left-0 right-0 mt-1 bg-[#1a1a1a] border border-white/10 rounded-xl overflow-hidden z-10 max-h-48 overflow-y-auto">
+              <div className="absolute top-full left-0 right-0 mt-1 bg-surface border border-white/10 rounded-xl overflow-hidden z-10 max-h-48 overflow-y-auto">
                 {exerciseList.map((ex) => (
                   <button
                     key={ex}
@@ -173,7 +166,7 @@ export const Evolution = () => {
         )}
 
         {loading ? (
-          <div className="h-48 animate-pulse bg-white/5 rounded-xl" />
+          <Skeleton className="h-48" />
         ) : exerciseChartData.length === 0 ? (
           <div className="h-48 flex flex-col items-center justify-center text-white/20 text-sm gap-2">
             <Dumbbell size={32} />
@@ -187,9 +180,7 @@ export const Evolution = () => {
                 <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" />
                 <XAxis dataKey="date" tick={{ fill: '#ffffff40', fontSize: 11 }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fill: '#ffffff40', fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
-                <Tooltip
-                  contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #22c55e20', borderRadius: '12px', color: '#fff', fontSize: '12px' }}
-                />
+                <Tooltip contentStyle={tooltipStyle} />
                 <Line type="monotone" dataKey="peso" stroke="#22c55e" strokeWidth={2.5} dot={{ fill: '#22c55e', r: 4, strokeWidth: 0 }} activeDot={{ r: 6 }} name="Peso kg" />
               </LineChart>
             </ResponsiveContainer>
@@ -200,25 +191,23 @@ export const Evolution = () => {
                 <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" />
                 <XAxis dataKey="date" tick={{ fill: '#ffffff40', fontSize: 11 }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fill: '#ffffff40', fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
-                <Tooltip
-                  contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #22c55e20', borderRadius: '12px', color: '#fff', fontSize: '12px' }}
-                />
+                <Tooltip contentStyle={tooltipStyle} />
                 <Line type="monotone" dataKey="reps" stroke="#60a5fa" strokeWidth={2.5} dot={{ fill: '#60a5fa', r: 4, strokeWidth: 0 }} activeDot={{ r: 6 }} name="Reps" />
               </LineChart>
             </ResponsiveContainer>
           </>
         )}
-      </div>
+      </Card>
 
       {/* Grafico checkins */}
-      <div className="bg-[#111] border border-white/5 rounded-2xl p-5 mb-4">
+      <Card className="mb-4">
         <div className="flex items-center gap-2 mb-6">
           <CalendarCheck size={16} className="text-blue-400" />
           <p className="text-xs font-bold text-white/40 uppercase tracking-widest">Check-ins por mes</p>
         </div>
 
         {loading ? (
-          <div className="h-48 animate-pulse bg-white/5 rounded-xl" />
+          <Skeleton className="h-48" />
         ) : checkinChart.length === 0 ? (
           <div className="h-48 flex items-center justify-center text-white/20 text-sm">
             Faca check-ins para ver o grafico
@@ -229,12 +218,12 @@ export const Evolution = () => {
               <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" />
               <XAxis dataKey="month" tick={{ fill: '#ffffff40', fontSize: 11 }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fill: '#ffffff40', fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
-              <Tooltip contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #22c55e20', borderRadius: '12px', color: '#fff', fontSize: '12px' }} />
-              <Line type="monotone" dataKey="checkins" stroke="#22c55e" strokeWidth={2.5} dot={{ fill: '#22c55e', r: 4, strokeWidth: 0 }} activeDot={{ r: 6, fill: '#22c55e' }} />
+              <Tooltip contentStyle={tooltipStyle} />
+              <Line type="monotone" dataKey="checkins" stroke="#22c55e" strokeWidth={2.5} dot={{ fill: '#22c55e', r: 4, strokeWidth: 0 }} activeDot={{ r: 6 }} />
             </LineChart>
           </ResponsiveContainer>
         )}
-      </div>
+      </Card>
 
       {/* Motivacao */}
       <div className="bg-green-500/5 border border-green-500/15 rounded-2xl p-5">

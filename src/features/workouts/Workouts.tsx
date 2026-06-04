@@ -1,48 +1,31 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAuthStore } from '../../store/useAuthStore';
-import {
-  createWorkout,
-  getUserWorkouts,
-  deleteWorkout,
-  updateWorkoutExercises,
-  Workout,
-} from '../../services/workoutService';
-import { getUserExercises, Exercise } from '../../services/exerciseService';
-import { WorkoutSession } from './WorkoutSession';
 import { Plus, Trash2, Play, ClipboardList, ChevronDown, Check } from 'lucide-react';
+import { useWorkouts } from './hooks/useWorkouts';
+import { getUserExercises, Exercise } from '../../services/exerciseService';
+import { useAuthStore } from '../../store/useAuthStore';
+import { useEffect } from 'react';
+import { WorkoutSession } from './WorkoutSession';
+import { Button, Card, SectionHeader, EmptyState, Skeleton } from '../../components/ui';
 
 const daysOfWeek = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab', 'Dom'];
 
 export const Workouts = () => {
   const { user } = useAuthStore();
-  const [workouts, setWorkouts] = useState<Workout[]>([]);
+  const { workouts, loading, saving, create, remove } = useWorkouts();
   const [exercises, setExercises] = useState<Exercise[]>([]);
-  const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [workoutName, setWorkoutName] = useState('');
   const [selectedDays, setSelectedDays] = useState<string[]>([]);
   const [selectedExercises, setSelectedExercises] = useState<Exercise[]>([]);
   const [showExPicker, setShowExPicker] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [activeSession, setActiveSession] = useState<Workout | null>(null);
+  const [activeSession, setActiveSession] = useState<any | null>(null);
   const [finished, setFinished] = useState(false);
 
   useEffect(() => {
     if (!user) return;
-    loadData();
+    getUserExercises(user.uid).then(setExercises);
   }, [user]);
-
-  const loadData = async () => {
-    setLoading(true);
-    const [w, ex] = await Promise.all([
-      getUserWorkouts(user!.uid),
-      getUserExercises(user!.uid),
-    ]);
-    setWorkouts(w);
-    setExercises(ex);
-    setLoading(false);
-  };
 
   const toggleDay = (day: string) => {
     setSelectedDays((prev) =>
@@ -59,27 +42,18 @@ export const Workouts = () => {
   };
 
   const handleCreate = async () => {
-    if (!workoutName.trim() || !user) return;
-    setSaving(true);
-    await createWorkout({
+    if (!workoutName.trim()) return;
+    await create({
       name: workoutName,
       days: selectedDays,
       exercises: selectedExercises.map((e) => e.id!),
       exerciseNames: selectedExercises.map((e) => e.name),
       duration: '0',
-      userId: user.uid,
     });
     setWorkoutName('');
     setSelectedDays([]);
     setSelectedExercises([]);
     setShowForm(false);
-    setSaving(false);
-    await loadData();
-  };
-
-  const handleDelete = async (id: string) => {
-    await deleteWorkout(id);
-    setWorkouts((prev) => prev.filter((w) => w.id !== id));
   };
 
   const handleFinish = () => {
@@ -104,21 +78,16 @@ export const Workouts = () => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
     >
-      {/* Header */}
       <div className="flex items-center justify-between mb-8">
-        <div>
-          <p className="text-white/40 text-xs font-semibold uppercase tracking-widest mb-1">Meus treinos</p>
-          <h1 className="text-4xl font-black text-white leading-none">Treinos</h1>
-        </div>
-        <button
+        <SectionHeader title="Treinos" subtitle="Meus treinos" />
+        <Button
           onClick={() => setShowForm(!showForm)}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${
-            showForm ? 'bg-white/10 text-white' : 'bg-green-500 hover:bg-green-400 text-black'
-          }`}
+          variant={showForm ? 'secondary' : 'primary'}
+          size="md"
         >
           <Plus size={16} />
           {showForm ? 'Cancelar' : 'Novo'}
-        </button>
+        </Button>
       </div>
 
       {/* Sucesso */}
@@ -144,10 +113,9 @@ export const Workouts = () => {
             exit={{ opacity: 0, height: 0 }}
             className="overflow-hidden mb-6"
           >
-            <div className="bg-[#111] border border-green-500/20 rounded-2xl p-5 space-y-4">
-              <h2 className="text-sm font-bold text-white uppercase tracking-widest">Novo Treino</h2>
+            <Card className="border-primary/20 space-y-4">
+              <p className="text-sm font-bold text-white uppercase tracking-widest">Novo Treino</p>
 
-              {/* Nome */}
               <div>
                 <label className="block text-xs text-white/40 font-medium mb-2">Nome</label>
                 <input
@@ -155,11 +123,10 @@ export const Workouts = () => {
                   value={workoutName}
                   onChange={(e) => setWorkoutName(e.target.value)}
                   placeholder="Ex: Treino A - Peito"
-                  className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-white/20 outline-none focus:border-green-500/50 transition-colors"
+                  className="w-full bg-background border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-white/20 outline-none focus:border-primary/50 transition-colors"
                 />
               </div>
 
-              {/* Dias */}
               <div>
                 <label className="block text-xs text-white/40 font-medium mb-2">Dias da semana</label>
                 <div className="flex gap-2 flex-wrap">
@@ -169,7 +136,7 @@ export const Workouts = () => {
                       onClick={() => toggleDay(day)}
                       className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                         selectedDays.includes(day)
-                          ? 'bg-green-500 text-black'
+                          ? 'bg-primary text-black'
                           : 'bg-white/5 text-white/40 hover:text-white'
                       }`}
                     >
@@ -179,14 +146,13 @@ export const Workouts = () => {
                 </div>
               </div>
 
-              {/* Exercicios */}
               <div>
                 <label className="block text-xs text-white/40 font-medium mb-2">
                   Exercicios ({selectedExercises.length} selecionados)
                 </label>
                 <button
                   onClick={() => setShowExPicker(!showExPicker)}
-                  className="w-full flex items-center justify-between bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-3 text-sm text-white/50 hover:text-white transition-colors"
+                  className="w-full flex items-center justify-between bg-background border border-white/10 rounded-xl px-4 py-3 text-sm text-white/50 hover:text-white transition-colors"
                 >
                   <span>Selecionar exercicios</span>
                   <ChevronDown size={16} />
@@ -200,10 +166,10 @@ export const Workouts = () => {
                       exit={{ opacity: 0, height: 0 }}
                       className="overflow-hidden"
                     >
-                      <div className="bg-[#0a0a0a] border border-white/5 rounded-xl mt-2 max-h-48 overflow-y-auto">
+                      <div className="bg-background border border-white/5 rounded-xl mt-2 max-h-48 overflow-y-auto">
                         {exercises.length === 0 ? (
                           <p className="text-white/30 text-xs text-center py-6">
-                            Nenhum exercicio cadastrado. Va em Exercicios e adicione primeiro.
+                            Nenhum exercicio cadastrado.
                           </p>
                         ) : (
                           exercises.map((ex) => {
@@ -218,9 +184,7 @@ export const Workouts = () => {
                                   <p className="text-white text-sm font-semibold">{ex.name}</p>
                                   <p className="text-white/30 text-xs">{ex.category}</p>
                                 </div>
-                                {selected && (
-                                  <Check size={16} className="text-green-400 shrink-0" />
-                                )}
+                                {selected && <Check size={16} className="text-green-400 shrink-0" />}
                               </button>
                             );
                           })
@@ -230,14 +194,10 @@ export const Workouts = () => {
                   )}
                 </AnimatePresence>
 
-                {/* Exercicios selecionados */}
                 {selectedExercises.length > 0 && (
                   <div className="flex flex-wrap gap-2 mt-2">
                     {selectedExercises.map((ex) => (
-                      <span
-                        key={ex.id}
-                        className="text-xs bg-green-500/10 text-green-400 px-2.5 py-1 rounded-lg font-semibold"
-                      >
+                      <span key={ex.id} className="text-xs bg-green-500/10 text-green-400 px-2.5 py-1 rounded-lg font-semibold">
                         {ex.name}
                       </span>
                     ))}
@@ -245,34 +205,29 @@ export const Workouts = () => {
                 )}
               </div>
 
-              <button
+              <Button
                 onClick={handleCreate}
-                disabled={!workoutName.trim() || saving}
-                className="w-full bg-green-500 hover:bg-green-400 disabled:opacity-40 text-black font-bold py-3.5 rounded-xl transition-all"
+                disabled={!workoutName.trim()}
+                loading={saving}
+                fullWidth
               >
-                {saving ? 'Salvando...' : 'Criar Treino'}
-              </button>
-            </div>
+                Criar Treino
+              </Button>
+            </Card>
           </motion.div>
         )}
       </AnimatePresence>
 
       {/* Loading */}
-      {loading && (
-        <div className="space-y-3">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="bg-[#111] rounded-2xl p-5 animate-pulse h-32" />
-          ))}
-        </div>
-      )}
+      {loading && <Skeleton className="h-32" count={3} />}
 
       {/* Empty */}
       {!loading && workouts.length === 0 && (
-        <div className="flex flex-col items-center justify-center h-48 text-white/20">
-          <ClipboardList size={40} className="mb-3" />
-          <p className="text-sm font-semibold">Nenhum treino cadastrado</p>
-          <p className="text-xs mt-1">Clique em Novo para comecar</p>
-        </div>
+        <EmptyState
+          icon={<ClipboardList size={40} />}
+          title="Nenhum treino cadastrado"
+          description="Clique em Novo para comecar"
+        />
       )}
 
       {/* Lista */}
@@ -284,52 +239,51 @@ export const Workouts = () => {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
-              className="bg-[#111] border border-white/5 rounded-2xl p-5 hover:border-green-500/20 transition-all"
             >
-              <div className="flex items-start justify-between gap-4 mb-3">
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-black text-white text-lg truncate">{workout.name}</h3>
-                  <div className="flex gap-1.5 mt-2 flex-wrap">
-                    {daysOfWeek.map((day) => (
-                      <span
-                        key={day}
-                        className={`text-xs px-2 py-0.5 rounded-lg font-bold ${
-                          workout.days.includes(day)
-                            ? 'bg-green-500/20 text-green-400'
-                            : 'bg-white/5 text-white/15'
-                        }`}
-                      >
-                        {day}
-                      </span>
-                    ))}
-                  </div>
-
-                  {/* Exercicios do treino */}
-                  {workout.exerciseNames && workout.exerciseNames.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 mt-3">
-                      {workout.exerciseNames.map((name, idx) => (
-                        <span key={idx} className="text-xs bg-white/5 text-white/40 px-2 py-0.5 rounded-lg">
-                          {name}
+              <Card hover>
+                <div className="flex items-start justify-between gap-4 mb-3">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-black text-white text-lg truncate">{workout.name}</h3>
+                    <div className="flex gap-1.5 mt-2 flex-wrap">
+                      {daysOfWeek.map((day) => (
+                        <span
+                          key={day}
+                          className={`text-xs px-2 py-0.5 rounded-lg font-bold ${
+                            workout.days.includes(day)
+                              ? 'bg-green-500/20 text-green-400'
+                              : 'bg-white/5 text-white/15'
+                          }`}
+                        >
+                          {day}
                         </span>
                       ))}
                     </div>
-                  )}
+                    {workout.exerciseNames && workout.exerciseNames.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mt-3">
+                        {workout.exerciseNames.map((name, idx) => (
+                          <span key={idx} className="text-xs bg-white/5 text-white/40 px-2 py-0.5 rounded-lg">
+                            {name}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => remove(workout.id!)}
+                    className="text-white/20 hover:text-red-400 transition-colors shrink-0"
+                  >
+                    <Trash2 size={16} />
+                  </button>
                 </div>
-                <button
-                  onClick={() => handleDelete(workout.id!)}
-                  className="text-white/20 hover:text-red-400 transition-colors shrink-0"
-                >
-                  <Trash2 size={16} />
-                </button>
-              </div>
 
-              <button
-                onClick={() => setActiveSession(workout)}
-                className="w-full flex items-center justify-center gap-2 bg-green-500 hover:bg-green-400 text-black font-bold py-3 rounded-xl transition-all text-sm"
-              >
-                <Play size={16} />
-                Iniciar Treino
-              </button>
+                <Button
+                  onClick={() => setActiveSession(workout)}
+                  fullWidth
+                >
+                  <Play size={16} />
+                  Iniciar Treino
+                </Button>
+              </Card>
             </motion.div>
           ))}
         </div>
