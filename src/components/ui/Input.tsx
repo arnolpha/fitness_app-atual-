@@ -41,10 +41,10 @@ export const Input = ({
           placeholder={placeholder}
           disabled={disabled}
           className={`
-            w-full bg-surface border border-white/10 rounded-xl
+            w-full bg-[#111111] border border-white/10 rounded-xl
             ${icon ? 'pl-10' : 'pl-4'} pr-4 py-3.5
             text-sm text-white placeholder-white/20
-            outline-none focus:border-primary/50 transition-colors
+            outline-none focus:border-green-500/50 transition-colors
             disabled:opacity-50
           `}
         />

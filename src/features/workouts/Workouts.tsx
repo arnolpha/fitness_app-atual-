@@ -1,12 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Trash2, Play, ClipboardList, ChevronDown, Check } from 'lucide-react';
 import { useWorkouts } from './hooks/useWorkouts';
 import { getUserExercises, Exercise } from '../../services/exerciseService';
 import { useAuthStore } from '../../store/useAuthStore';
-import { useEffect } from 'react';
 import { WorkoutSession } from './WorkoutSession';
-import { Button, Card, SectionHeader, EmptyState, Skeleton } from '../../components/ui';
+import { Button, Card, EmptyState, Skeleton } from '../../components/ui';
 
 const daysOfWeek = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab', 'Dom'];
 
@@ -78,8 +77,12 @@ export const Workouts = () => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
     >
-      <div className="flex items-center justify-between mb-8">
-        <SectionHeader title="Treinos" subtitle="Meus treinos" />
+      {/* Header */}
+      <div className="flex items-start justify-between mb-8">
+        <div>
+          <p className="text-white/40 text-xs font-semibold uppercase tracking-widest mb-1">Meus treinos</p>
+          <h1 className="text-4xl font-black text-white leading-none">Treinos</h1>
+        </div>
         <Button
           onClick={() => setShowForm(!showForm)}
           variant={showForm ? 'secondary' : 'primary'}
@@ -276,10 +279,7 @@ export const Workouts = () => {
                   </button>
                 </div>
 
-                <Button
-                  onClick={() => setActiveSession(workout)}
-                  fullWidth
-                >
+                <Button onClick={() => setActiveSession(workout)} fullWidth>
                   <Play size={16} />
                   Iniciar Treino
                 </Button>

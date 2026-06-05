@@ -17,8 +17,8 @@ export const Card = ({
     <div
       onClick={onClick}
       className={`
-        bg-surface border border-white/5 rounded-2xl p-5
-        ${hover ? 'hover:border-primary/20 transition-all cursor-pointer' : ''}
+        bg-[#111111] border border-white/5 rounded-2xl p-5
+        ${hover ? 'hover:border-green-500/20 transition-all cursor-pointer' : ''}
         ${onClick ? 'cursor-pointer' : ''}
         ${className}
       `}
