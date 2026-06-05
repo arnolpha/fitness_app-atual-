@@ -9,6 +9,7 @@ import { Workouts } from '../features/workouts/Workouts';
 import { Profile } from '../features/profile/Profile';
 import { Checkin } from '../features/checkin/Checkin';
 import { Evolution } from '../features/evolution/Evolution';
+import { History } from '../features/workouts/History';
 
 const Placeholder = ({ title }) => (
   <div className="flex items-center justify-center h-64">
@@ -31,6 +32,7 @@ export const AppRoutes = () => {
           <Route path="evolution" element={<Evolution />} />
           <Route path="checkin" element={<Checkin />} />
           <Route path="profile" element={<Profile />} />
+          <Route path="history" element={<History />} />
           <Route path="help" element={<Placeholder title="Ajuda" />} />
           <Route path="info" element={<Placeholder title="Info" />} />
         </Route>

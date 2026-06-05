@@ -15,13 +15,14 @@ import {
   Info,
   LogOut,
   Menu,
-  X,
+  History,
 } from 'lucide-react';
 
 const menuItems = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/exercises', label: 'Exercicios', icon: Dumbbell },
   { path: '/workouts', label: 'Treinos', icon: ClipboardList },
+  { path: '/history', label: 'Historico', icon: History },
   { path: '/evolution', label: 'Evolucao', icon: TrendingUp },
   { path: '/checkin', label: 'Check-in', icon: CalendarCheck },
   { path: '/profile', label: 'Perfil', icon: User },
@@ -29,8 +30,8 @@ const menuItems = [
 
 const bottomNavItems = [
   { path: '/', label: 'Home', icon: LayoutDashboard },
-  { path: '/exercises', label: 'Exercicios', icon: Dumbbell },
   { path: '/workouts', label: 'Treinos', icon: ClipboardList },
+  { path: '/history', label: 'Historico', icon: History },
   { path: '/checkin', label: 'Check-in', icon: CalendarCheck },
   { path: '/profile', label: 'Perfil', icon: User },
 ];
@@ -59,7 +60,7 @@ export const Layout = () => {
             <Dumbbell size={16} className="text-black" />
           </div>
           <div>
-            <h1 className="text-sm font-800 text-white leading-none">FitnessApp</h1>
+            <h1 className="text-sm font-black text-white leading-none">FitnessApp</h1>
             <p className="text-xs text-white/30 mt-0.5">Pro</p>
           </div>
         </div>
@@ -129,7 +130,7 @@ export const Layout = () => {
         <SidebarContent />
       </aside>
 
-      {/* Sidebar Mobile overlay */}
+      {/* Sidebar Mobile */}
       <AnimatePresence>
         {sidebarOpen && (
           <motion.div
@@ -157,7 +158,6 @@ export const Layout = () => {
 
       {/* Main */}
       <div className="flex-1 flex flex-col min-w-0">
-
         {/* Header mobile */}
         <header className="lg:hidden flex items-center justify-between px-4 py-3 border-b border-white/5 bg-[#0f0f0f]">
           <button
