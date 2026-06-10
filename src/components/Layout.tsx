@@ -61,7 +61,7 @@ export const Layout = () => {
             <Dumbbell size={16} className="text-black" />
           </div>
           <div>
-            <h1 className="text-sm font-black text-white leading-none">FitnessApp</h1>
+            <h1 className="text-sm font-black text-white leading-none">Apex Fitness</h1>
             <p className="text-xs text-white/30 mt-0.5">Pro</p>
           </div>
         </div>
@@ -171,7 +171,7 @@ export const Layout = () => {
             <div className="w-6 h-6 bg-green-500 rounded-md flex items-center justify-center">
               <Dumbbell size={12} className="text-black" />
             </div>
-            <span className="text-sm font-semibold">FitnessApp</span>
+            <span className="text-sm font-semibold">Apex Fitness</span>
           </div>
           <NotificationBell />
         </header>
