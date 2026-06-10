@@ -323,3 +323,5 @@ export const Exercises = () => {
     </motion.div>
   );
 };
+
+

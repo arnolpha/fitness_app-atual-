@@ -1,16 +1,18 @@
 import { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '../../store/useAuthStore';
 import { getUserExercises, Exercise } from '../../services/exerciseService';
 import { saveSession, Serie } from '../../services/sessionService';
 import { Workout } from '../../services/workoutService';
 import {
   Timer,
-  Plus,
-  Trash2,
   CheckCircle,
   X,
+  Plus,
+  Coffee,
+  ChevronDown,
 } from 'lucide-react';
+import { Button, Card } from '../../components/ui';
 
 interface Props {
   workout: Workout;
@@ -21,6 +23,7 @@ interface Props {
 interface SetEntry {
   reps: string;
   weight: string;
+  done: boolean;
 }
 
 interface ExerciseEntry {
@@ -28,13 +31,26 @@ interface ExerciseEntry {
   sets: SetEntry[];
 }
 
+const REST_OPTIONS = [
+  { label: '30s', value: 30 },
+  { label: '60s', value: 60 },
+  { label: '90s', value: 90 },
+  { label: '2min', value: 120 },
+  { label: '3min', value: 180 },
+];
+
 export const WorkoutSession = ({ workout, onFinish, onCancel }: Props) => {
   const { user } = useAuthStore();
   const [seconds, setSeconds] = useState(0);
   const [entries, setEntries] = useState<ExerciseEntry[]>([]);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [restTime, setRestTime] = useState(60);
+  const [restCountdown, setRestCountdown] = useState<number | null>(null);
+  const [restActive, setRestActive] = useState(false);
+  const [showRestConfig, setShowRestConfig] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const restRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -46,22 +62,31 @@ export const WorkoutSession = ({ workout, onFinish, onCancel }: Props) => {
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, []);
 
+  useEffect(() => {
+    if (restActive && restCountdown !== null) {
+      if (restCountdown <= 0) {
+        setRestActive(false);
+        setRestCountdown(null);
+        if (restRef.current) clearInterval(restRef.current);
+        return;
+      }
+      restRef.current = setInterval(() => {
+        setRestCountdown((prev) => (prev !== null ? prev - 1 : null));
+      }, 1000);
+      return () => { if (restRef.current) clearInterval(restRef.current); };
+    }
+  }, [restActive]);
+
   const loadExercises = async () => {
     setLoading(true);
     const allExercises = await getUserExercises(user!.uid);
-    
-    // Filtra apenas os exercicios do treino
     const workoutExercises = allExercises.filter((ex) =>
       workout.exercises.includes(ex.id!)
     );
-
-    // Se o treino tem exercicios, usa eles. Senao deixa vazio
-    const initialEntries: ExerciseEntry[] = workoutExercises.map((ex) => ({
+    setEntries(workoutExercises.map((ex) => ({
       exercise: ex,
-      sets: [{ reps: '', weight: '' }],
-    }));
-
-    setEntries(initialEntries);
+      sets: [{ reps: '', weight: '', done: false }],
+    })));
     setLoading(false);
   };
 
@@ -73,10 +98,22 @@ export const WorkoutSession = ({ workout, onFinish, onCancel }: Props) => {
     return `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
   };
 
+  const startRest = () => {
+    if (restRef.current) clearInterval(restRef.current);
+    setRestCountdown(restTime);
+    setRestActive(true);
+  };
+
+  const skipRest = () => {
+    if (restRef.current) clearInterval(restRef.current);
+    setRestActive(false);
+    setRestCountdown(null);
+  };
+
   const addSet = (i: number) =>
     setEntries((prev) =>
       prev.map((entry, idx) =>
-        idx === i ? { ...entry, sets: [...entry.sets, { reps: '', weight: '' }] } : entry
+        idx === i ? { ...entry, sets: [...entry.sets, { reps: '', weight: '', done: false }] } : entry
       )
     );
 
@@ -96,10 +133,22 @@ export const WorkoutSession = ({ workout, onFinish, onCancel }: Props) => {
       )
     );
 
+  const completeSet = (i: number, si: number) => {
+    setEntries((prev) =>
+      prev.map((entry, idx) =>
+        idx === i
+          ? { ...entry, sets: entry.sets.map((s, sIdx) => sIdx === si ? { ...s, done: true } : s) }
+          : entry
+      )
+    );
+    startRest();
+  };
+
   const handleFinish = async () => {
     if (!user) return;
     setSaving(true);
     if (intervalRef.current) clearInterval(intervalRef.current);
+    if (restRef.current) clearInterval(restRef.current);
 
     const series: Serie[] = entries.map((e) => ({
       exerciseId: e.exercise.id!,
@@ -142,17 +191,102 @@ export const WorkoutSession = ({ workout, onFinish, onCancel }: Props) => {
       </div>
 
       {/* Cronometro */}
-      <div className="bg-green-500/10 border border-green-500/20 rounded-2xl p-5 mb-6 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-green-500/20 rounded-xl flex items-center justify-center">
-            <Timer size={20} className="text-green-400" />
+      <Card className="mb-4 bg-green-500/10 border-green-500/20">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-green-500/20 rounded-xl flex items-center justify-center">
+              <Timer size={20} className="text-green-400" />
+            </div>
+            <div>
+              <p className="text-xs text-green-400/60 font-semibold uppercase tracking-widest">Tempo</p>
+              <p className="text-3xl font-black text-green-400 leading-none">{formatTime(seconds)}</p>
+            </div>
           </div>
-          <div>
-            <p className="text-xs text-green-400/60 font-semibold uppercase tracking-widest">Tempo</p>
-            <p className="text-3xl font-black text-green-400 leading-none">{formatTime(seconds)}</p>
-          </div>
+          <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
         </div>
-        <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+      </Card>
+
+      {/* Timer de descanso */}
+      <AnimatePresence>
+        {restActive && restCountdown !== null && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="mb-4"
+          >
+            <Card className="bg-blue-500/10 border-blue-500/20">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-blue-500/20 rounded-xl flex items-center justify-center">
+                    <Coffee size={20} className="text-blue-400" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-blue-400/60 font-semibold uppercase tracking-widest">Descanso</p>
+                    <p className="text-3xl font-black text-blue-400 leading-none">
+                      {String(Math.floor(restCountdown / 60)).padStart(2, '0')}:{String(restCountdown % 60).padStart(2, '0')}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={skipRest}
+                  className="text-xs text-blue-400 font-bold bg-blue-500/20 px-3 py-1.5 rounded-lg hover:bg-blue-500/30 transition-colors"
+                >
+                  Pular
+                </button>
+              </div>
+
+              {/* Barra de progresso */}
+              <div className="mt-3 h-1.5 bg-blue-500/20 rounded-full overflow-hidden">
+                <motion.div
+                  className="h-full bg-blue-400 rounded-full"
+                  initial={{ width: '100%' }}
+                  animate={{ width: `${(restCountdown / restTime) * 100}%` }}
+                  transition={{ duration: 1, ease: 'linear' }}
+                />
+              </div>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Configuracao de descanso */}
+      <div className="mb-6">
+        <button
+          onClick={() => setShowRestConfig(!showRestConfig)}
+          className="flex items-center gap-2 text-xs text-white/30 hover:text-white/60 transition-colors"
+        >
+          <Coffee size={12} />
+          Descanso: {REST_OPTIONS.find((o) => o.value === restTime)?.label}
+          <ChevronDown size={12} className={`transition-transform ${showRestConfig ? 'rotate-180' : ''}`} />
+        </button>
+
+        <AnimatePresence>
+          {showRestConfig && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="overflow-hidden"
+            >
+              <div className="flex gap-2 mt-2">
+                {REST_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => { setRestTime(opt.value); setShowRestConfig(false); }}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                      restTime === opt.value
+                        ? 'bg-green-500 text-black'
+                        : 'bg-white/5 text-white/40 hover:text-white'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Loading */}
@@ -166,18 +300,17 @@ export const WorkoutSession = ({ workout, onFinish, onCancel }: Props) => {
 
       {/* Sem exercicios */}
       {!loading && entries.length === 0 && (
-        <div className="bg-[#111] border border-white/5 rounded-2xl p-6 mb-6 text-center">
+        <Card className="mb-6 text-center">
           <p className="text-white/40 text-sm">Nenhum exercicio neste treino.</p>
           <p className="text-white/20 text-xs mt-1">Edite o treino e adicione exercicios.</p>
-        </div>
+        </Card>
       )}
 
       {/* Exercicios */}
       {!loading && (
         <div className="space-y-4 mb-6">
           {entries.map((entry, entryIndex) => (
-            <div key={entryIndex} className="bg-[#111] border border-white/5 rounded-2xl p-4">
-              {/* Nome do exercicio */}
+            <Card key={entryIndex}>
               <div className="mb-4">
                 <h3 className="font-black text-white">{entry.exercise.name}</h3>
                 <p className="text-xs text-white/30 mt-0.5">
@@ -185,19 +318,19 @@ export const WorkoutSession = ({ workout, onFinish, onCancel }: Props) => {
                 </p>
               </div>
 
-              {/* Series */}
               <div className="space-y-2">
-                <div className="grid grid-cols-3 gap-2 mb-1">
+                <div className="grid grid-cols-4 gap-2 mb-1">
                   <p className="text-xs text-white/30 font-semibold uppercase text-center">Serie</p>
                   <p className="text-xs text-white/30 font-semibold uppercase text-center">Peso kg</p>
                   <p className="text-xs text-white/30 font-semibold uppercase text-center">Reps</p>
+                  <p className="text-xs text-white/30 font-semibold uppercase text-center">OK</p>
                 </div>
 
                 {entry.sets.map((set, setIndex) => (
-                  <div key={setIndex} className="grid grid-cols-3 gap-2 items-center">
+                  <div key={setIndex} className={`grid grid-cols-4 gap-2 items-center p-2 rounded-xl transition-all ${set.done ? 'bg-green-500/10' : ''}`}>
                     <div className="flex items-center justify-center gap-1">
                       <span className="text-white/40 text-sm font-bold">{setIndex + 1}</span>
-                      {entry.sets.length > 1 && (
+                      {entry.sets.length > 1 && !set.done && (
                         <button
                           onClick={() => removeSet(entryIndex, setIndex)}
                           className="text-white/10 hover:text-red-400 transition-colors"
@@ -211,15 +344,31 @@ export const WorkoutSession = ({ workout, onFinish, onCancel }: Props) => {
                       value={set.weight}
                       onChange={(e) => updateSet(entryIndex, setIndex, 'weight', e.target.value)}
                       placeholder="0"
-                      className="bg-[#0a0a0a] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white text-center outline-none focus:border-green-500/50 transition-colors"
+                      disabled={set.done}
+                      className={`bg-[#0a0a0a] border rounded-lg px-3 py-2.5 text-sm text-white text-center outline-none transition-colors ${
+                        set.done ? 'border-green-500/20 opacity-60' : 'border-white/10 focus:border-green-500/50'
+                      }`}
                     />
                     <input
                       type="number"
                       value={set.reps}
                       onChange={(e) => updateSet(entryIndex, setIndex, 'reps', e.target.value)}
                       placeholder="0"
-                      className="bg-[#0a0a0a] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white text-center outline-none focus:border-green-500/50 transition-colors"
+                      disabled={set.done}
+                      className={`bg-[#0a0a0a] border rounded-lg px-3 py-2.5 text-sm text-white text-center outline-none transition-colors ${
+                        set.done ? 'border-green-500/20 opacity-60' : 'border-white/10 focus:border-green-500/50'
+                      }`}
                     />
+                    <button
+                      onClick={() => !set.done && completeSet(entryIndex, setIndex)}
+                      className={`w-full h-10 rounded-lg flex items-center justify-center transition-all ${
+                        set.done
+                          ? 'bg-green-500/20 text-green-400'
+                          : 'bg-white/5 hover:bg-green-500 hover:text-black text-white/30'
+                      }`}
+                    >
+                      <CheckCircle size={18} />
+                    </button>
                   </div>
                 ))}
 
@@ -230,20 +379,21 @@ export const WorkoutSession = ({ workout, onFinish, onCancel }: Props) => {
                   + Adicionar serie
                 </button>
               </div>
-            </div>
+            </Card>
           ))}
         </div>
       )}
 
       {/* Finalizar */}
-      <button
+      <Button
         onClick={handleFinish}
-        disabled={saving}
-        className="w-full flex items-center justify-center gap-2 bg-green-500 hover:bg-green-400 disabled:opacity-50 text-black font-black py-4 rounded-xl transition-all"
+        loading={saving}
+        fullWidth
+        className="py-4"
       >
         <CheckCircle size={18} />
-        {saving ? 'Salvando...' : 'Finalizar Treino'}
-      </button>
+        Finalizar Treino
+      </Button>
     </motion.div>
   );
 };
