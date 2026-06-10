@@ -17,6 +17,7 @@ import {
   Menu,
   History,
 } from 'lucide-react';
+import { NotificationBell } from './ui/NotificationBell';
 
 const menuItems = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -172,7 +173,12 @@ export const Layout = () => {
             </div>
             <span className="text-sm font-semibold">FitnessApp</span>
           </div>
-          <div className="w-6" />
+          <NotificationBell />
+        </header>
+
+        {/* Header desktop */}
+        <header className="hidden lg:flex items-center justify-end px-8 py-4 border-b border-white/5">
+          <NotificationBell />
         </header>
 
         {/* Content */}
