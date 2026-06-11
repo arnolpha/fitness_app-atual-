@@ -126,19 +126,19 @@ export const Layout = () => {
   return (
     <div className="flex h-screen bg-[#0a0a0a] text-white overflow-hidden">
 
-      {/* Sidebar Desktop */}
-      <aside className="hidden lg:flex flex-col w-60 bg-[#0f0f0f] border-r border-white/5 shrink-0">
+      {/* Sidebar Desktop — visivel apenas em md+ */}
+      <aside className="hidden md:flex flex-col w-64 bg-[#0f0f0f] border-r border-white/5 shrink-0">
         <SidebarContent />
       </aside>
 
-      {/* Sidebar Mobile */}
+      {/* Sidebar Mobile overlay */}
       <AnimatePresence>
         {sidebarOpen && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-20 lg:hidden"
+            className="fixed inset-0 z-20 md:hidden"
           >
             <div
               className="absolute inset-0 bg-black/70"
@@ -149,7 +149,7 @@ export const Layout = () => {
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="absolute left-0 top-0 h-full w-60 bg-[#0f0f0f] border-r border-white/5 z-30"
+              className="absolute left-0 top-0 h-full w-64 bg-[#0f0f0f] border-r border-white/5 z-30"
             >
               <SidebarContent />
             </motion.aside>
@@ -159,36 +159,37 @@ export const Layout = () => {
 
       {/* Main */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Header mobile */}
-        <header className="lg:hidden flex items-center justify-between px-4 py-3 border-b border-white/5 bg-[#0f0f0f]">
+
+        {/* Header mobile — visivel apenas abaixo de md */}
+        <header className="md:hidden flex items-center justify-between px-4 py-4 border-b border-white/5 bg-[#0f0f0f]">
           <button
             onClick={() => setSidebarOpen(true)}
             className="text-white/60 hover:text-white transition-colors"
           >
-            <Menu size={22} />
+            <Menu size={24} />
           </button>
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-green-500 rounded-md flex items-center justify-center">
-              <Dumbbell size={12} className="text-black" />
+            <div className="w-7 h-7 bg-green-500 rounded-lg flex items-center justify-center">
+              <Dumbbell size={14} className="text-black" />
             </div>
-            <span className="text-sm font-semibold">Apex Fitness</span>
+            <span className="text-base font-black">Apex Fitness</span>
           </div>
           <NotificationBell />
         </header>
 
         {/* Header desktop */}
-        <header className="hidden lg:flex items-center justify-end px-8 py-4 border-b border-white/5">
+        <header className="hidden md:flex items-center justify-end px-8 py-4 border-b border-white/5">
           <NotificationBell />
         </header>
 
         {/* Content */}
-        <main className="flex-1 overflow-y-auto p-4 lg:p-8 pb-24 lg:pb-8">
+        <main className="flex-1 overflow-y-auto p-4 md:p-8 pb-24 md:pb-8">
           <Outlet />
         </main>
 
-        {/* Bottom Nav Mobile */}
-        <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-[#0f0f0f] border-t border-white/5 z-10">
-          <div className="flex items-center justify-around px-2 py-2">
+        {/* Bottom Nav Mobile — visivel apenas abaixo de md */}
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#0f0f0f] border-t border-white/5 z-10">
+          <div className="flex items-center justify-around px-2 py-3">
             {bottomNavItems.map((item) => {
               const Icon = item.icon;
               return (
@@ -197,13 +198,13 @@ export const Layout = () => {
                   to={item.path}
                   end={item.path === '/'}
                   className={({ isActive }) =>
-                    `flex flex-col items-center gap-1 px-3 py-1.5 rounded-xl transition-all ${
+                    `flex flex-col items-center gap-1 px-3 py-1 rounded-xl transition-all ${
                       isActive ? 'text-green-500' : 'text-white/30 hover:text-white'
                     }`
                   }
                 >
-                  <Icon size={20} />
-                  <span className="text-xs font-medium">{item.label}</span>
+                  <Icon size={22} />
+                  <span className="text-xs font-semibold">{item.label}</span>
                 </NavLink>
               );
             })}
