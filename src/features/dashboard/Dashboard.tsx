@@ -2,7 +2,6 @@ import { motion } from 'framer-motion';
 import { Dumbbell, CalendarCheck, Flame, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useDashboard } from './hooks/useDashboard';
-import { Card, SectionHeader, Skeleton, Button } from '../../components/ui';
 
 export const Dashboard = () => {
   const navigate = useNavigate();
@@ -20,61 +19,72 @@ export const Dashboard = () => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
     >
-      <SectionHeader title={firstName} subtitle="Bem-vindo de volta" />
+      {/* Header */}
+      <div className="mb-8">
+        <p className="text-white/40 text-sm font-semibold uppercase tracking-widest mb-2">
+          Bem-vindo de volta
+        </p>
+        <h1 className="text-5xl font-black text-white leading-none">{firstName}</h1>
+      </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-3 mb-8">
+      <div className="grid grid-cols-3 gap-4 mb-8">
         {loading ? (
-          <Skeleton className="h-28" count={3} />
+          <>
+            {[1,2,3].map((i) => (
+              <div key={i} className="bg-[#111] rounded-2xl p-5 animate-pulse h-32" />
+            ))}
+          </>
         ) : (
           statCards.map((stat) => {
             const Icon = stat.icon;
             return (
-              <Card key={stat.label}>
-                <div className={`w-8 h-8 ${stat.bg} rounded-lg flex items-center justify-center mb-3`}>
-                  <Icon size={16} className={stat.color} />
+              <div key={stat.label} className="bg-[#111] border border-white/5 rounded-2xl p-5">
+                <div className={`w-10 h-10 ${stat.bg} rounded-xl flex items-center justify-center mb-4`}>
+                  <Icon size={20} className={stat.color} />
                 </div>
-                <p className="text-2xl font-black text-white">{stat.value}</p>
-                <p className="text-white/40 text-xs font-medium mt-1">{stat.label}</p>
-              </Card>
+                <p className="text-3xl font-black text-white">{stat.value}</p>
+                <p className="text-white/40 text-sm font-medium mt-1">{stat.label}</p>
+              </div>
             );
           })
         )}
       </div>
 
       {/* Check-in */}
-      <Card className="mb-4">
-        <p className="text-xs font-semibold text-white/40 uppercase tracking-widest mb-4">
+      <div className="bg-[#111] border border-white/5 rounded-2xl p-6 mb-4">
+        <p className="text-sm font-semibold text-white/40 uppercase tracking-widest mb-4">
           Check-in de hoje
         </p>
         {checkinMsg && (
-          <p className="text-sm text-center mb-3 text-green-400 font-medium">{checkinMsg}</p>
+          <p className="text-base text-center mb-3 text-green-400 font-medium">{checkinMsg}</p>
         )}
-        <Button
+        <button
           onClick={checkin}
-          disabled={checkedToday}
-          loading={checkinLoading}
-          fullWidth
-          variant={checkedToday ? 'secondary' : 'primary'}
+          disabled={checkinLoading || checkedToday}
+          className={`w-full font-bold py-4 rounded-xl transition-all text-base ${
+            checkedToday
+              ? 'bg-green-500/15 text-green-400 cursor-default'
+              : 'bg-green-500 hover:bg-green-400 text-black'
+          }`}
         >
-          {checkedToday ? 'Check-in feito hoje!' : 'Fazer Check-in'}
-        </Button>
-      </Card>
+          {checkedToday ? 'Check-in feito hoje!' : checkinLoading ? 'Registrando...' : 'Fazer Check-in'}
+        </button>
+      </div>
 
       {/* Inicio rapido */}
-      <Card>
-        <p className="text-xs font-semibold text-white/40 uppercase tracking-widest mb-4">
+      <div className="bg-[#111] border border-white/5 rounded-2xl p-6">
+        <p className="text-sm font-semibold text-white/40 uppercase tracking-widest mb-4">
           Inicio rapido
         </p>
-        <Button
+        <button
           onClick={() => navigate('/workouts')}
-          variant="secondary"
-          fullWidth
+          className="w-full flex items-center justify-center gap-2 bg-white/5 hover:bg-green-500 hover:text-black text-white font-bold py-4 rounded-xl transition-all text-base border border-white/5"
         >
-          <Plus size={18} />
+          <Plus size={20} />
           Iniciar Treino
-        </Button>
-      </Card>
+        </button>
+      </div>
     </motion.div>
   );
 };

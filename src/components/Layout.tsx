@@ -1,21 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { signOut } from 'firebase/auth';
 import { auth } from '../lib/firebase';
 import { useAuthStore } from '../store/useAuthStore';
 import {
-  LayoutDashboard,
-  Dumbbell,
-  ClipboardList,
-  TrendingUp,
-  CalendarCheck,
-  User,
-  HelpCircle,
-  Info,
-  LogOut,
-  Menu,
-  History,
+  LayoutDashboard, Dumbbell, ClipboardList, TrendingUp,
+  CalendarCheck, User, HelpCircle, Info, LogOut, Menu, History,
 } from 'lucide-react';
 import { NotificationBell } from './ui/NotificationBell';
 
@@ -44,8 +35,17 @@ const bottomItems = [
 
 export const Layout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
   const { logout } = useAuthStore();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsDesktop(window.innerWidth >= 768);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -56,18 +56,18 @@ export const Layout = () => {
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
       <div className="p-6 border-b border-white/5">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
-            <Dumbbell size={16} className="text-black" />
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 bg-green-500 rounded-xl flex items-center justify-center">
+            <Dumbbell size={18} className="text-black" />
           </div>
           <div>
-            <h1 className="text-sm font-black text-white leading-none">Apex Fitness</h1>
+            <h1 className="text-base font-black text-white leading-none">Apex Fitness</h1>
             <p className="text-xs text-white/30 mt-0.5">Pro</p>
           </div>
         </div>
       </div>
 
-      <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
+      <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
         {menuItems.map((item) => {
           const Icon = item.icon;
           return (
@@ -77,21 +77,21 @@ export const Layout = () => {
               end={item.path === '/'}
               onClick={() => setSidebarOpen(false)}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                `flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
                   isActive
                     ? 'bg-green-500 text-black'
                     : 'text-white/50 hover:text-white hover:bg-white/5'
                 }`
               }
             >
-              <Icon size={18} />
+              <Icon size={20} />
               {item.label}
             </NavLink>
           );
         })}
       </nav>
 
-      <div className="p-3 border-t border-white/5 space-y-0.5">
+      <div className="p-3 border-t border-white/5 space-y-1">
         {bottomItems.map((item) => {
           const Icon = item.icon;
           return (
@@ -100,23 +100,23 @@ export const Layout = () => {
               to={item.path}
               onClick={() => setSidebarOpen(false)}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                `flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
                   isActive
                     ? 'bg-green-500 text-black'
                     : 'text-white/50 hover:text-white hover:bg-white/5'
                 }`
               }
             >
-              <Icon size={18} />
+              <Icon size={20} />
               {item.label}
             </NavLink>
           );
         })}
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-red-400 hover:bg-red-500/10 transition-all"
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-400 hover:bg-red-500/10 transition-all"
         >
-          <LogOut size={18} />
+          <LogOut size={20} />
           Log off
         </button>
       </div>
@@ -124,24 +124,26 @@ export const Layout = () => {
   );
 
   return (
-    <div className="flex h-screen bg-[#0a0a0a] text-white overflow-hidden">
+    <div style={{ display: 'flex', height: '100vh', backgroundColor: '#0a0a0a', color: 'white', overflow: 'hidden' }}>
 
-      {/* Sidebar Desktop — visivel apenas em md+ */}
-      <aside className="hidden md:flex flex-col w-64 bg-[#0f0f0f] border-r border-white/5 shrink-0">
-        <SidebarContent />
-      </aside>
+      {/* Sidebar Desktop */}
+      {isDesktop && (
+        <aside style={{ width: '256px', backgroundColor: '#0f0f0f', borderRight: '1px solid rgba(255,255,255,0.05)', flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
+          <SidebarContent />
+        </aside>
+      )}
 
       {/* Sidebar Mobile overlay */}
       <AnimatePresence>
-        {sidebarOpen && (
+        {!isDesktop && sidebarOpen && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-20 md:hidden"
+            style={{ position: 'fixed', inset: 0, zIndex: 20 }}
           >
             <div
-              className="absolute inset-0 bg-black/70"
+              style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)' }}
               onClick={() => setSidebarOpen(false)}
             />
             <motion.aside
@@ -149,7 +151,7 @@ export const Layout = () => {
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="absolute left-0 top-0 h-full w-64 bg-[#0f0f0f] border-r border-white/5 z-30"
+              style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: '256px', backgroundColor: '#0f0f0f', borderRight: '1px solid rgba(255,255,255,0.05)', zIndex: 30, display: 'flex', flexDirection: 'column' }}
             >
               <SidebarContent />
             </motion.aside>
@@ -158,58 +160,61 @@ export const Layout = () => {
       </AnimatePresence>
 
       {/* Main */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
 
-        {/* Header mobile — visivel apenas abaixo de md */}
-        <header className="md:hidden flex items-center justify-between px-4 py-4 border-b border-white/5 bg-[#0f0f0f]">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="text-white/60 hover:text-white transition-colors"
-          >
-            <Menu size={24} />
-          </button>
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 bg-green-500 rounded-lg flex items-center justify-center">
-              <Dumbbell size={14} className="text-black" />
+        {/* Header mobile */}
+        {!isDesktop && (
+          <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderBottom: '1px solid rgba(255,255,255,0.05)', backgroundColor: '#0f0f0f' }}>
+            <button onClick={() => setSidebarOpen(true)} style={{ color: 'rgba(255,255,255,0.6)' }}>
+              <Menu size={24} />
+            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ width: '28px', height: '28px', backgroundColor: '#22c55e', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Dumbbell size={14} color="black" />
+              </div>
+              <span style={{ fontSize: '16px', fontWeight: 900 }}>Apex Fitness</span>
             </div>
-            <span className="text-base font-black">Apex Fitness</span>
-          </div>
-          <NotificationBell />
-        </header>
+            <NotificationBell />
+          </header>
+        )}
 
         {/* Header desktop */}
-        <header className="hidden md:flex items-center justify-end px-8 py-4 border-b border-white/5">
-          <NotificationBell />
-        </header>
+        {isDesktop && (
+          <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '16px 32px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+            <NotificationBell />
+          </header>
+        )}
 
         {/* Content */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-8 pb-24 md:pb-8">
+        <main style={{ flex: 1, overflowY: 'auto', padding: isDesktop ? '32px' : '16px', paddingBottom: isDesktop ? '32px' : '96px' }}>
           <Outlet />
         </main>
 
-        {/* Bottom Nav Mobile — visivel apenas abaixo de md */}
-        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#0f0f0f] border-t border-white/5 z-10">
-          <div className="flex items-center justify-around px-2 py-3">
-            {bottomNavItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <NavLink
-                  key={item.path}
-                  to={item.path}
-                  end={item.path === '/'}
-                  className={({ isActive }) =>
-                    `flex flex-col items-center gap-1 px-3 py-1 rounded-xl transition-all ${
-                      isActive ? 'text-green-500' : 'text-white/30 hover:text-white'
-                    }`
-                  }
-                >
-                  <Icon size={22} />
-                  <span className="text-xs font-semibold">{item.label}</span>
-                </NavLink>
-              );
-            })}
-          </div>
-        </nav>
+        {/* Bottom Nav Mobile */}
+        {!isDesktop && (
+          <nav style={{ position: 'fixed', bottom: 0, left: 0, right: 0, backgroundColor: '#0f0f0f', borderTop: '1px solid rgba(255,255,255,0.05)', zIndex: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-around', padding: '8px 8px 12px' }}>
+              {bottomNavItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <NavLink
+                    key={item.path}
+                    to={item.path}
+                    end={item.path === '/'}
+                    className={({ isActive }) =>
+                      `flex flex-col items-center gap-1 px-3 py-1 rounded-xl transition-all ${
+                        isActive ? 'text-green-500' : 'text-white/30'
+                      }`
+                    }
+                  >
+                    <Icon size={22} />
+                    <span style={{ fontSize: '11px', fontWeight: 600 }}>{item.label}</span>
+                  </NavLink>
+                );
+              })}
+            </div>
+          </nav>
+        )}
       </div>
     </div>
   );
