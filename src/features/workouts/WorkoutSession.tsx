@@ -8,7 +8,6 @@ import {
   Timer,
   CheckCircle,
   X,
-  Plus,
   Coffee,
   ChevronDown,
 } from 'lucide-react';
@@ -31,6 +30,15 @@ interface ExerciseEntry {
   sets: SetEntry[];
 }
 
+interface PersistedSession {
+  workoutId: string;
+  seconds: number;
+  entries: ExerciseEntry[];
+  savedAt: number;
+}
+
+const STORAGE_KEY = 'apex_active_session';
+
 const REST_OPTIONS = [
   { label: '30s', value: 30 },
   { label: '60s', value: 60 },
@@ -49,18 +57,78 @@ export const WorkoutSession = ({ workout, onFinish, onCancel }: Props) => {
   const [restCountdown, setRestCountdown] = useState<number | null>(null);
   const [restActive, setRestActive] = useState(false);
   const [showRestConfig, setShowRestConfig] = useState(false);
+  const [restored, setRestored] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const restRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  /* ---------------- PERSISTÊNCIA ---------------- */
+
+  // Salva sessão no localStorage sempre que mudar
+  useEffect(() => {
+    if (loading || entries.length === 0) return;
+    const data: PersistedSession = {
+      workoutId: workout.id!,
+      seconds,
+      entries,
+      savedAt: Date.now(),
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  }, [seconds, entries, loading]);
+
+  // Limpa ao desmontar sem finalizar (cancel)
+  const clearStorage = () => localStorage.removeItem(STORAGE_KEY);
+
+  /* ---------------- LOAD ---------------- */
 
   useEffect(() => {
     if (!user) return;
     loadExercises();
   }, [user]);
 
+  const loadExercises = async () => {
+    setLoading(true);
+
+    // Tenta restaurar sessão salva
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const saved: PersistedSession = JSON.parse(raw);
+        // Só restaura se for o mesmo treino e tiver menos de 4h
+        const age = Date.now() - saved.savedAt;
+        if (saved.workoutId === workout.id && age < 4 * 60 * 60 * 1000) {
+          setEntries(saved.entries);
+          setSeconds(saved.seconds);
+          setRestored(true);
+          setLoading(false);
+          return;
+        } else {
+          clearStorage();
+        }
+      }
+    } catch {
+      clearStorage();
+    }
+
+    // Carrega normalmente
+    const allExercises = await getUserExercises(user!.uid);
+    const workoutExercises = allExercises.filter((ex) =>
+      workout.exercises.includes(ex.id!)
+    );
+    setEntries(workoutExercises.map((ex) => ({
+      exercise: ex,
+      sets: [{ reps: '', weight: '', done: false }],
+    })));
+    setLoading(false);
+  };
+
+  /* ---------------- CRONÔMETRO ---------------- */
+
   useEffect(() => {
     intervalRef.current = setInterval(() => setSeconds((s) => s + 1), 1000);
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, []);
+
+  /* ---------------- DESCANSO ---------------- */
 
   useEffect(() => {
     if (restActive && restCountdown !== null) {
@@ -76,19 +144,6 @@ export const WorkoutSession = ({ workout, onFinish, onCancel }: Props) => {
       return () => { if (restRef.current) clearInterval(restRef.current); };
     }
   }, [restActive]);
-
-  const loadExercises = async () => {
-    setLoading(true);
-    const allExercises = await getUserExercises(user!.uid);
-    const workoutExercises = allExercises.filter((ex) =>
-      workout.exercises.includes(ex.id!)
-    );
-    setEntries(workoutExercises.map((ex) => ({
-      exercise: ex,
-      sets: [{ reps: '', weight: '', done: false }],
-    })));
-    setLoading(false);
-  };
 
   const formatTime = (s: number) => {
     const h = Math.floor(s / 3600);
@@ -109,6 +164,8 @@ export const WorkoutSession = ({ workout, onFinish, onCancel }: Props) => {
     setRestActive(false);
     setRestCountdown(null);
   };
+
+  /* ---------------- SETS ---------------- */
 
   const addSet = (i: number) =>
     setEntries((prev) =>
@@ -144,6 +201,8 @@ export const WorkoutSession = ({ workout, onFinish, onCancel }: Props) => {
     startRest();
   };
 
+  /* ---------------- FINALIZAR ---------------- */
+
   const handleFinish = async () => {
     if (!user) return;
     setSaving(true);
@@ -169,9 +228,17 @@ export const WorkoutSession = ({ workout, onFinish, onCancel }: Props) => {
       series,
     });
 
+    clearStorage();
     setSaving(false);
     onFinish();
   };
+
+  const handleCancel = () => {
+    clearStorage();
+    onCancel();
+  };
+
+  /* ---------------- RENDER ---------------- */
 
   return (
     <motion.div
@@ -185,12 +252,28 @@ export const WorkoutSession = ({ workout, onFinish, onCancel }: Props) => {
           <p className="text-white/40 text-xs font-semibold uppercase tracking-widest mb-1">Treino ativo</p>
           <h1 className="text-2xl font-black text-white leading-none">{workout.name}</h1>
         </div>
-        <button onClick={onCancel} className="text-white/30 hover:text-white transition-colors">
+        <button onClick={handleCancel} className="text-white/30 hover:text-white transition-colors">
           <X size={22} />
         </button>
       </div>
 
-      {/* Cronometro */}
+      {/* Banner de sessão restaurada */}
+      <AnimatePresence>
+        {restored && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="bg-yellow-500/10 border border-yellow-500/20 rounded-2xl p-3 mb-4"
+          >
+            <p className="text-yellow-400 text-xs font-semibold">
+              ⚡ Sessão anterior restaurada — continue de onde parou
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Cronômetro */}
       <Card className="mb-4 bg-green-500/10 border-green-500/20">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -235,8 +318,6 @@ export const WorkoutSession = ({ workout, onFinish, onCancel }: Props) => {
                   Pular
                 </button>
               </div>
-
-              {/* Barra de progresso */}
               <div className="mt-3 h-1.5 bg-blue-500/20 rounded-full overflow-hidden">
                 <motion.div
                   className="h-full bg-blue-400 rounded-full"
@@ -250,7 +331,7 @@ export const WorkoutSession = ({ workout, onFinish, onCancel }: Props) => {
         )}
       </AnimatePresence>
 
-      {/* Configuracao de descanso */}
+      {/* Configuração de descanso */}
       <div className="mb-6">
         <button
           onClick={() => setShowRestConfig(!showRestConfig)}
@@ -298,15 +379,15 @@ export const WorkoutSession = ({ workout, onFinish, onCancel }: Props) => {
         </div>
       )}
 
-      {/* Sem exercicios */}
+      {/* Sem exercícios */}
       {!loading && entries.length === 0 && (
         <Card className="mb-6 text-center">
-          <p className="text-white/40 text-sm">Nenhum exercicio neste treino.</p>
-          <p className="text-white/20 text-xs mt-1">Edite o treino e adicione exercicios.</p>
+          <p className="text-white/40 text-sm">Nenhum exercício neste treino.</p>
+          <p className="text-white/20 text-xs mt-1">Edite o treino e adicione exercícios.</p>
         </Card>
       )}
 
-      {/* Exercicios */}
+      {/* Exercícios */}
       {!loading && (
         <div className="space-y-4 mb-6">
           {entries.map((entry, entryIndex) => (
@@ -376,7 +457,7 @@ export const WorkoutSession = ({ workout, onFinish, onCancel }: Props) => {
                   onClick={() => addSet(entryIndex)}
                   className="w-full text-xs text-white/30 hover:text-green-400 font-semibold py-2 transition-colors"
                 >
-                  + Adicionar serie
+                  + Adicionar série
                 </button>
               </div>
             </Card>
