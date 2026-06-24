@@ -33,19 +33,102 @@ const bottomItems = [
   { path: '/info', label: 'Info', icon: Info },
 ];
 
-export const Layout = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
-  const { logout } = useAuthStore();
-  const navigate = useNavigate();
+// ✅ Fora do Layout — evita recriação a cada render
+interface SidebarContentProps {
+  onClose: () => void;
+  onLogout: () => void;
+}
+
+const SidebarContent = ({ onClose, onLogout }: SidebarContentProps) => (
+  <div className="flex flex-col h-full">
+    <div className="p-6 border-b border-white/5">
+      <div className="flex items-center gap-3">
+        <div className="w-9 h-9 bg-green-500 rounded-xl flex items-center justify-center">
+          <Dumbbell size={18} className="text-black" />
+        </div>
+        <div>
+          <h1 className="text-base font-black text-white leading-none">Apex Fitness</h1>
+          <p className="text-xs text-white/30 mt-0.5">Pro</p>
+        </div>
+      </div>
+    </div>
+
+    <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+      {menuItems.map((item) => {
+        const Icon = item.icon;
+        return (
+          <NavLink
+            key={item.path}
+            to={item.path}
+            end={item.path === '/'}
+            onClick={onClose}
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                isActive
+                  ? 'bg-green-500 text-black'
+                  : 'text-white/50 hover:text-white hover:bg-white/5'
+              }`
+            }
+          >
+            <Icon size={20} />
+            {item.label}
+          </NavLink>
+        );
+      })}
+    </nav>
+
+    <div className="p-3 border-t border-white/5 space-y-1">
+      {bottomItems.map((item) => {
+        const Icon = item.icon;
+        return (
+          <NavLink
+            key={item.path}
+            to={item.path}
+            onClick={onClose}
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                isActive
+                  ? 'bg-green-500 text-black'
+                  : 'text-white/50 hover:text-white hover:bg-white/5'
+              }`
+            }
+          >
+            <Icon size={20} />
+            {item.label}
+          </NavLink>
+        );
+      })}
+      <button
+        onClick={onLogout}
+        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-400 hover:bg-red-500/10 transition-all"
+      >
+        <LogOut size={20} />
+        Log off
+      </button>
+    </div>
+  </div>
+);
+
+// ✅ Hook robusto para detectar desktop — evita leitura prematura do window
+const useIsDesktop = () => {
+  const [isDesktop, setIsDesktop] = useState(() => window.innerWidth >= 768);
 
   useEffect(() => {
-    const handleResize = () => {
-      setIsDesktop(window.innerWidth >= 768);
-    };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    const mq = window.matchMedia('(min-width: 768px)');
+    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
+    mq.addEventListener('change', handler);
+    setIsDesktop(mq.matches); // sincroniza na montagem
+    return () => mq.removeEventListener('change', handler);
   }, []);
+
+  return isDesktop;
+};
+
+export const Layout = () => {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const isDesktop = useIsDesktop();
+  const { logout } = useAuthStore();
+  const navigate = useNavigate();
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -53,75 +136,7 @@ export const Layout = () => {
     navigate('/login');
   };
 
-  const SidebarContent = () => (
-    <div className="flex flex-col h-full">
-      <div className="p-6 border-b border-white/5">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-green-500 rounded-xl flex items-center justify-center">
-            <Dumbbell size={18} className="text-black" />
-          </div>
-          <div>
-            <h1 className="text-base font-black text-white leading-none">Apex Fitness</h1>
-            <p className="text-xs text-white/30 mt-0.5">Pro</p>
-          </div>
-        </div>
-      </div>
-
-      <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-        {menuItems.map((item) => {
-          const Icon = item.icon;
-          return (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              end={item.path === '/'}
-              onClick={() => setSidebarOpen(false)}
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
-                  isActive
-                    ? 'bg-green-500 text-black'
-                    : 'text-white/50 hover:text-white hover:bg-white/5'
-                }`
-              }
-            >
-              <Icon size={20} />
-              {item.label}
-            </NavLink>
-          );
-        })}
-      </nav>
-
-      <div className="p-3 border-t border-white/5 space-y-1">
-        {bottomItems.map((item) => {
-          const Icon = item.icon;
-          return (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              onClick={() => setSidebarOpen(false)}
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
-                  isActive
-                    ? 'bg-green-500 text-black'
-                    : 'text-white/50 hover:text-white hover:bg-white/5'
-                }`
-              }
-            >
-              <Icon size={20} />
-              {item.label}
-            </NavLink>
-          );
-        })}
-        <button
-          onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-400 hover:bg-red-500/10 transition-all"
-        >
-          <LogOut size={20} />
-          Log off
-        </button>
-      </div>
-    </div>
-  );
+  const handleClose = () => setSidebarOpen(false);
 
   return (
     <div style={{ display: 'flex', height: '100vh', backgroundColor: '#0a0a0a', color: 'white', overflow: 'hidden' }}>
@@ -129,7 +144,7 @@ export const Layout = () => {
       {/* Sidebar Desktop */}
       {isDesktop && (
         <aside style={{ width: '256px', backgroundColor: '#0f0f0f', borderRight: '1px solid rgba(255,255,255,0.05)', flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
-          <SidebarContent />
+          <SidebarContent onClose={handleClose} onLogout={handleLogout} />
         </aside>
       )}
 
@@ -144,7 +159,7 @@ export const Layout = () => {
           >
             <div
               style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)' }}
-              onClick={() => setSidebarOpen(false)}
+              onClick={handleClose}
             />
             <motion.aside
               initial={{ x: '-100%' }}
@@ -153,7 +168,7 @@ export const Layout = () => {
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
               style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: '256px', backgroundColor: '#0f0f0f', borderRight: '1px solid rgba(255,255,255,0.05)', zIndex: 30, display: 'flex', flexDirection: 'column' }}
             >
-              <SidebarContent />
+              <SidebarContent onClose={handleClose} onLogout={handleLogout} />
             </motion.aside>
           </motion.div>
         )}
