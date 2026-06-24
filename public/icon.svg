@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Fundo escuro com cantos arredondados -->
+  <rect width="512" height="512" rx="112" fill="#0f0f0f"/>
+
+  <!-- Brilho sutil no topo -->
+  <ellipse cx="256" cy="80" rx="180" ry="60" fill="#22c55e" opacity="0.06"/>
+
+  <!-- Haltere — barra central -->
+  <rect x="176" y="236" width="160" height="40" rx="8" fill="#22c55e"/>
+
+  <!-- Peso esquerdo externo -->
+  <rect x="96" y="196" width="36" height="120" rx="10" fill="#22c55e"/>
+
+  <!-- Conector esquerdo -->
+  <rect x="132" y="220" width="44" height="72" rx="6" fill="#16a34a"/>
+
+  <!-- Peso direito externo -->
+  <rect x="380" y="196" width="36" height="120" rx="10" fill="#22c55e"/>
+
+  <!-- Conector direito -->
+  <rect x="336" y="220" width="44" height="72" rx="6" fill="#16a34a"/>
+
+  <!-- Brilho na barra central -->
+  <rect x="176" y="236" width="160" height="12" rx="6" fill="#4ade80" opacity="0.4"/>
+</svg>
