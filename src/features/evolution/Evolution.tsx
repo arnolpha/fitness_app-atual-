@@ -106,7 +106,7 @@ export const Evolution = () => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
     >
-      <SectionHeader title="Evolucao" subtitle="Seu progresso" />
+      <SectionHeader title="Evolução" subtitle="Seu progresso" />
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3 mb-6">
@@ -128,12 +128,12 @@ export const Evolution = () => {
         )}
       </div>
 
-      {/* Grafico evolucao por exercicio */}
+      {/* Gráfico de evolução por exercício */}
       <Card className="mb-4">
         <div className="flex items-center gap-2 mb-4">
           <TrendingUp size={16} className="text-green-400" />
           <p className="text-xs font-bold text-white/40 uppercase tracking-widest">
-            Evolucao por exercicio
+            Evolução por exercício
           </p>
         </div>
 
@@ -143,7 +143,7 @@ export const Evolution = () => {
               onClick={() => setShowExPicker(!showExPicker)}
               className="w-full flex items-center justify-between bg-background border border-white/10 rounded-xl px-4 py-3 text-sm text-white"
             >
-              <span>{selectedExercise || 'Selecionar exercicio'}</span>
+              <span>{selectedExercise || 'Selecionar exercício'}</span>
               <ChevronDown size={16} className="text-white/30" />
             </button>
 
@@ -170,7 +170,7 @@ export const Evolution = () => {
         ) : exerciseChartData.length === 0 ? (
           <div className="h-48 flex flex-col items-center justify-center text-white/20 text-sm gap-2">
             <Dumbbell size={32} />
-            <p>Finalize treinos para ver sua evolucao</p>
+            <p>Finalize treinos para ver sua evolução</p>
           </div>
         ) : (
           <>

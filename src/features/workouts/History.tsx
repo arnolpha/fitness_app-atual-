@@ -56,7 +56,7 @@ export const History = () => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
     >
-      <SectionHeader title="Historico" subtitle="Treinos realizados" />
+      <SectionHeader title="Histórico" subtitle="Treinos realizados" />
 
       {/* Stats rapidos */}
       <div className="grid grid-cols-2 gap-3 mb-6">
@@ -80,7 +80,7 @@ export const History = () => {
         <EmptyState
           icon={<Dumbbell size={40} />}
           title="Nenhum treino realizado ainda"
-          description="Inicie um treino para ver o historico"
+          description="Inicie um treino para ver o histórico"
         />
       )}
 
@@ -110,7 +110,7 @@ export const History = () => {
                       <div className="flex items-center gap-1.5">
                         <Dumbbell size={12} className="text-blue-400" />
                         <span className="text-white/50 text-xs font-semibold">
-                          {session.series.length} exercicios
+                          {session.series.length} exercícios
                         </span>
                       </div>
                       {totalVolume(session) > 0 && (

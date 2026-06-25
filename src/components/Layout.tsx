@@ -12,10 +12,10 @@ import { NotificationBell } from './ui/NotificationBell';
 
 const menuItems = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { path: '/exercises', label: 'Exercicios', icon: Dumbbell },
+  { path: '/exercises', label: 'Exercícios', icon: Dumbbell },
   { path: '/workouts', label: 'Treinos', icon: ClipboardList },
-  { path: '/history', label: 'Historico', icon: History },
-  { path: '/evolution', label: 'Evolucao', icon: TrendingUp },
+  { path: '/history', label: 'Histórico', icon: History },
+  { path: '/evolution', label: 'Evolução', icon: TrendingUp },
   { path: '/checkin', label: 'Check-in', icon: CalendarCheck },
   { path: '/profile', label: 'Perfil', icon: User },
 ];
@@ -23,7 +23,7 @@ const menuItems = [
 const bottomNavItems = [
   { path: '/', label: 'Home', icon: LayoutDashboard },
   { path: '/workouts', label: 'Treinos', icon: ClipboardList },
-  { path: '/history', label: 'Historico', icon: History },
+  { path: '/history', label: 'Histórico', icon: History },
   { path: '/checkin', label: 'Check-in', icon: CalendarCheck },
   { path: '/profile', label: 'Perfil', icon: User },
 ];

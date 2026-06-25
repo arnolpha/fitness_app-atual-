@@ -69,7 +69,7 @@ export const Exercises = () => {
       <div className="flex items-start justify-between mb-8">
         <div>
           <p className="text-white/40 text-xs font-semibold uppercase tracking-widest mb-1">Biblioteca</p>
-          <h1 className="text-4xl font-black text-white leading-none">Exercicios</h1>
+          <h1 className="text-4xl font-black text-white leading-none">Exercícios</h1>
         </div>
         <div className="flex gap-2">
           <Button
@@ -91,7 +91,7 @@ export const Exercises = () => {
         </div>
       </div>
 
-      {/* Formulario de novo exercicio */}
+      {/* Formulario de novo exercício */}
       <AnimatePresence>
         {showForm && (
           <motion.div
@@ -101,7 +101,7 @@ export const Exercises = () => {
             className="overflow-hidden mb-6"
           >
             <Card className="border-green-500/20 space-y-4">
-              <p className="text-sm font-bold text-white uppercase tracking-widest">Novo Exercicio</p>
+              <p className="text-sm font-bold text-white uppercase tracking-widest">Novo Exercício</p>
 
               <Input
                 label="Nome"
@@ -162,14 +162,14 @@ export const Exercises = () => {
                 loading={saving}
                 fullWidth
               >
-                Criar Exercicio
+                Criar Exercício
               </Button>
             </Card>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Biblioteca de exercicios */}
+      {/* Biblioteca de exercícios */}
       <AnimatePresence>
         {showLibrary && (
           <motion.div
@@ -181,7 +181,7 @@ export const Exercises = () => {
             <Card className="border-green-500/20">
               <div className="flex items-center justify-between mb-4">
                 <p className="text-sm font-bold text-white uppercase tracking-widest">
-                  Biblioteca — {filteredLibrary.length} exercicios
+                  Biblioteca — {filteredLibrary.length} exercícios
                 </p>
                 <button onClick={() => setShowLibrary(false)} className="text-white/30 hover:text-white transition-colors">
                   <X size={18} />
@@ -252,7 +252,7 @@ export const Exercises = () => {
       <Input
         value={search}
         onChange={setSearch}
-        placeholder="Buscar exercicio..."
+        placeholder="Buscar exercício..."
         icon={<Search size={16} />}
         className="mb-4"
       />
@@ -281,7 +281,7 @@ export const Exercises = () => {
       {!loading && exercises.length === 0 && (
         <EmptyState
           icon={<Dumbbell size={40} />}
-          title="Nenhum exercicio ainda"
+          title="Nenhum exercício ainda"
           description="Use a Biblioteca ou clique em Novo para comecar"
         />
       )}
@@ -323,5 +323,3 @@ export const Exercises = () => {
     </motion.div>
   );
 };
-
-

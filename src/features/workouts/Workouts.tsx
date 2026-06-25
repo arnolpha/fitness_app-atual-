@@ -151,13 +151,13 @@ export const Workouts = () => {
 
               <div>
                 <label className="block text-xs text-white/40 font-medium mb-2">
-                  Exercicios ({selectedExercises.length} selecionados)
+                  Exercícios ({selectedExercises.length} selecionados)
                 </label>
                 <button
                   onClick={() => setShowExPicker(!showExPicker)}
                   className="w-full flex items-center justify-between bg-background border border-white/10 rounded-xl px-4 py-3 text-sm text-white/50 hover:text-white transition-colors"
                 >
-                  <span>Selecionar exercicios</span>
+                  <span>Selecionar exercícios</span>
                   <ChevronDown size={16} />
                 </button>
 
@@ -172,7 +172,7 @@ export const Workouts = () => {
                       <div className="bg-background border border-white/5 rounded-xl mt-2 max-h-48 overflow-y-auto">
                         {exercises.length === 0 ? (
                           <p className="text-white/30 text-xs text-center py-6">
-                            Nenhum exercicio cadastrado.
+                            Nenhum exercício cadastrado.
                           </p>
                         ) : (
                           exercises.map((ex) => {
