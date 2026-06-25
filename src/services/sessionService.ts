@@ -8,6 +8,7 @@ import {
   orderBy,
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
+import { handleFirestoreError } from '../utils/firebaseErrors';
 
 export interface Serie {
   exerciseId: string;
@@ -25,20 +26,28 @@ export interface WorkoutSession {
   createdAt?: any;
 }
 
-export const saveSession = async (session: Omit<WorkoutSession, 'id'>) => {
-  const ref = await addDoc(collection(db, 'sessions'), {
-    ...session,
-    createdAt: serverTimestamp(),
-  });
-  return ref.id;
+export const saveSession = async (session: Omit<WorkoutSession, 'id'>): Promise<string> => {
+  try {
+    const ref = await addDoc(collection(db, 'sessions'), {
+      ...session,
+      createdAt: serverTimestamp(),
+    });
+    return ref.id;
+  } catch (error) {
+    handleFirestoreError(error);
+  }
 };
 
 export const getUserSessions = async (userId: string): Promise<WorkoutSession[]> => {
-  const q = query(
-    collection(db, 'sessions'),
-    where('userId', '==', userId),
-    orderBy('createdAt', 'asc')
-  );
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as WorkoutSession));
+  try {
+    const q = query(
+      collection(db, 'sessions'),
+      where('userId', '==', userId),
+      orderBy('createdAt', 'asc')
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as WorkoutSession));
+  } catch (error) {
+    handleFirestoreError(error);
+  }
 };
