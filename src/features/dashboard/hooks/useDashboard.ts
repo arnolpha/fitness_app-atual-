@@ -8,6 +8,15 @@ import {
 } from '../../../services/progressionService';
 import { getUserSessions } from '../../../services/sessionService';
 
+// ✅ Data local sem usar toISOString() — evita bug de timezone em São Paulo
+const getLocalDateString = (): string => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 export const useDashboard = () => {
   const { user } = useAuthStore();
 
@@ -48,11 +57,10 @@ export const useDashboard = () => {
       getUserSessions(user!.uid),
     ]);
 
-    const today = new Date().toISOString().split('T')[0];
+    // ✅ Usa data local em vez de toISOString()
+    const today = getLocalDateString();
 
-    setCheckedToday(
-      checkins.some((c) => c.date === today)
-    );
+    setCheckedToday(checkins.some((c) => c.date === today));
 
     setStats({
       workouts: workouts.length,
@@ -60,12 +68,12 @@ export const useDashboard = () => {
       streak: getStreak(checkins),
     });
 
-    const totalMinutes = sessions.reduce(
+    const totalSeconds = sessions.reduce(
       (acc, session) => acc + (session.duration || 0),
       0
     );
 
-    setTotalTrainingTime(totalMinutes);
+    setTotalTrainingTime(totalSeconds);
     setProgression(progressionData);
     setPersonalRecord(personalRecordData);
 
@@ -80,14 +88,13 @@ export const useDashboard = () => {
     const result = await createCheckin(user.uid);
 
     if (result === 'already_checked') {
-      setCheckinMsg('Voce ja fez check-in hoje!');
+      setCheckinMsg('Você já fez check-in hoje!');
     } else {
       setCheckinMsg('Check-in realizado!');
       await load();
     }
 
     setCheckinLoading(false);
-
     setTimeout(() => setCheckinMsg(''), 3000);
   };
 

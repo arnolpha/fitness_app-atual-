@@ -6,9 +6,18 @@ import { Card, SectionHeader, Button, Skeleton } from '../../components/ui';
 const getDaysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate();
 const getFirstDayOfMonth = (year: number, month: number) => new Date(year, month, 1).getDay();
 
+// ✅ Data local sem toISOString()
+const getLocalDateString = (): string => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 const monthNames = [
-  'Janeiro', 'Fevereiro', 'Marco', 'Abril', 'Maio', 'Junho',
-  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
 ];
 
 export const Checkin = () => {
@@ -17,15 +26,15 @@ export const Checkin = () => {
   const today = new Date();
   const year = today.getFullYear();
   const month = today.getMonth();
-  const todayStr = today.toISOString().split('T')[0];
+  const todayStr = getLocalDateString(); // ✅ data local
   const checkinDates = new Set(checkins.map((c) => c.date));
   const daysInMonth = getDaysInMonth(year, month);
   const firstDay = getFirstDayOfMonth(year, month);
 
   const statCards = [
     { label: 'Total', value: checkins.length.toString(), icon: CalendarCheck, color: 'text-green-400', bg: 'bg-green-500/10' },
-    { label: 'Sequencia', value: `${streak}d`, icon: Flame, color: 'text-orange-400', bg: 'bg-orange-500/10' },
-    { label: 'Este mes', value: thisMonthCount.toString(), icon: CalendarCheck, color: 'text-blue-400', bg: 'bg-blue-500/10' },
+    { label: 'Sequência', value: `${streak}d`, icon: Flame, color: 'text-orange-400', bg: 'bg-orange-500/10' },
+    { label: 'Este mês', value: thisMonthCount.toString(), icon: CalendarCheck, color: 'text-blue-400', bg: 'bg-blue-500/10' },
   ];
 
   return (
@@ -34,7 +43,7 @@ export const Checkin = () => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
     >
-      <SectionHeader title="Check-in" subtitle="Presenca diaria" />
+      <SectionHeader title="Check-in" subtitle="Presença diária" />
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3 mb-6">
@@ -52,7 +61,7 @@ export const Checkin = () => {
         })}
       </div>
 
-      {/* Botao */}
+      {/* Botão */}
       <Card className="mb-6">
         {message && (
           <p className="text-sm text-center mb-3 text-green-400 font-semibold">{message}</p>
@@ -69,7 +78,7 @@ export const Checkin = () => {
         </Button>
       </Card>
 
-      {/* Calendario */}
+      {/* Calendário */}
       <Card>
         <p className="text-xs font-bold text-white/40 uppercase tracking-widest mb-4">
           {monthNames[month]} {year}
