@@ -1,30 +1,31 @@
 import { useState } from 'react';
-import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
-import { auth } from '../lib/firebase';
-import { useAuthStore } from '../store/useAuthStore';
 import { Link } from 'react-router-dom';
 import { Dumbbell, Mail, Lock, ArrowRight, RotateCcw } from 'lucide-react';
+import { loginWithEmail, sendPasswordReset } from '../services/authService';
+import { useAuthStore } from '../store/useAuthStore';
 
 export const Login = () => {
+  const { setUser } = useAuthStore();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
   const [showReset, setShowReset] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   const [resetMsg, setResetMsg] = useState('');
   const [resetLoading, setResetLoading] = useState(false);
-  const { setUser } = useAuthStore();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
     try {
-      const result = await signInWithEmailAndPassword(auth, email, password);
-      setUser(result.user);
-    } catch {
-      setError('E-mail ou senha invalidos.');
+      const user = await loginWithEmail({ email, password });
+      setUser(user);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao entrar.');
     } finally {
       setLoading(false);
     }
@@ -35,14 +36,17 @@ export const Login = () => {
     setResetLoading(true);
     setResetMsg('');
     try {
-      await sendPasswordResetEmail(auth, resetEmail);
+      await sendPasswordReset(resetEmail);
       setResetMsg('E-mail enviado! Verifique sua caixa de entrada.');
-    } catch {
-      setResetMsg('E-mail nao encontrado.');
+    } catch (err) {
+      setResetMsg(err instanceof Error ? err.message : 'Erro ao enviar e-mail.');
     } finally {
       setResetLoading(false);
     }
   };
+
+  const inputClass = "w-full bg-[#111] border border-white/10 rounded-xl px-4 py-3.5 text-sm text-white placeholder-white/20 outline-none focus:border-green-500/50 transition-colors";
+  const labelClass = "flex items-center gap-2 text-xs text-white/40 font-semibold uppercase tracking-wider mb-2";
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-4">
@@ -68,36 +72,30 @@ export const Login = () => {
 
             <form onSubmit={handleLogin} className="space-y-4">
               <div>
-                <label className="flex items-center gap-2 text-xs text-white/40 font-semibold uppercase tracking-wider mb-2">
-                  <Mail size={12} /> E-mail
-                </label>
+                <label className={labelClass}><Mail size={12} /> E-mail</label>
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   placeholder="seu@email.com"
-                  className="w-full bg-[#111] border border-white/10 rounded-xl px-4 py-3.5 text-sm text-white placeholder-white/20 outline-none focus:border-green-500/50 transition-colors"
+                  className={inputClass}
                 />
               </div>
 
               <div>
-                <label className="flex items-center gap-2 text-xs text-white/40 font-semibold uppercase tracking-wider mb-2">
-                  <Lock size={12} /> Senha
-                </label>
+                <label className={labelClass}><Lock size={12} /> Senha</label>
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   placeholder="••••••••"
-                  className="w-full bg-[#111] border border-white/10 rounded-xl px-4 py-3.5 text-sm text-white placeholder-white/20 outline-none focus:border-green-500/50 transition-colors"
+                  className={inputClass}
                 />
               </div>
 
-              {error && (
-                <p className="text-red-400 text-xs font-semibold">{error}</p>
-              )}
+              {error && <p className="text-red-400 text-xs font-semibold">{error}</p>}
 
               <button
                 type="submit"
@@ -117,7 +115,7 @@ export const Login = () => {
                 Esqueci minha senha
               </button>
               <p className="text-white/30 text-xs">
-                Nao tem conta?{' '}
+                Não tem conta?{' '}
                 <Link to="/register" className="text-green-400 font-semibold hover:text-green-300">
                   Criar conta
                 </Link>
@@ -133,16 +131,14 @@ export const Login = () => {
 
             <form onSubmit={handleReset} className="space-y-4">
               <div>
-                <label className="flex items-center gap-2 text-xs text-white/40 font-semibold uppercase tracking-wider mb-2">
-                  <Mail size={12} /> E-mail
-                </label>
+                <label className={labelClass}><Mail size={12} /> E-mail</label>
                 <input
                   type="email"
                   value={resetEmail}
                   onChange={(e) => setResetEmail(e.target.value)}
                   required
                   placeholder="seu@email.com"
-                  className="w-full bg-[#111] border border-white/10 rounded-xl px-4 py-3.5 text-sm text-white placeholder-white/20 outline-none focus:border-green-500/50 transition-colors"
+                  className={inputClass}
                 />
               </div>
 

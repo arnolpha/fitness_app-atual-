@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { signOut } from 'firebase/auth';
-import { auth } from '../lib/firebase';
 import { useAuthStore } from '../store/useAuthStore';
+import { logoutUser } from '../services/authService';
 import {
   LayoutDashboard, Dumbbell, ClipboardList, TrendingUp,
   CalendarCheck, User, HelpCircle, Info, LogOut, Menu, History,
@@ -33,7 +32,6 @@ const bottomItems = [
   { path: '/info', label: 'Info', icon: Info },
 ];
 
-// ✅ Fora do Layout — evita recriação a cada render
 interface SidebarContentProps {
   onClose: () => void;
   onLogout: () => void;
@@ -109,7 +107,6 @@ const SidebarContent = ({ onClose, onLogout }: SidebarContentProps) => (
   </div>
 );
 
-// ✅ Hook robusto para detectar desktop — evita leitura prematura do window
 const useIsDesktop = () => {
   const [isDesktop, setIsDesktop] = useState(() => window.innerWidth >= 768);
 
@@ -117,7 +114,7 @@ const useIsDesktop = () => {
     const mq = window.matchMedia('(min-width: 768px)');
     const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
     mq.addEventListener('change', handler);
-    setIsDesktop(mq.matches); // sincroniza na montagem
+    setIsDesktop(mq.matches);
     return () => mq.removeEventListener('change', handler);
   }, []);
 
@@ -131,7 +128,7 @@ export const Layout = () => {
   const navigate = useNavigate();
 
   const handleLogout = async () => {
-    await signOut(auth);
+    await logoutUser();
     logout();
     navigate('/login');
   };
@@ -141,14 +138,12 @@ export const Layout = () => {
   return (
     <div style={{ display: 'flex', height: '100vh', backgroundColor: '#0a0a0a', color: 'white', overflow: 'hidden' }}>
 
-      {/* Sidebar Desktop */}
       {isDesktop && (
         <aside style={{ width: '256px', backgroundColor: '#0f0f0f', borderRight: '1px solid rgba(255,255,255,0.05)', flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
           <SidebarContent onClose={handleClose} onLogout={handleLogout} />
         </aside>
       )}
 
-      {/* Sidebar Mobile overlay */}
       <AnimatePresence>
         {!isDesktop && sidebarOpen && (
           <motion.div
@@ -174,10 +169,8 @@ export const Layout = () => {
         )}
       </AnimatePresence>
 
-      {/* Main */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
 
-        {/* Header mobile */}
         {!isDesktop && (
           <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderBottom: '1px solid rgba(255,255,255,0.05)', backgroundColor: '#0f0f0f' }}>
             <button onClick={() => setSidebarOpen(true)} style={{ color: 'rgba(255,255,255,0.6)' }}>
@@ -193,19 +186,16 @@ export const Layout = () => {
           </header>
         )}
 
-        {/* Header desktop */}
         {isDesktop && (
           <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', padding: '16px 32px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
             <NotificationBell />
           </header>
         )}
 
-        {/* Content */}
         <main style={{ flex: 1, overflowY: 'auto', padding: isDesktop ? '32px' : '16px', paddingBottom: isDesktop ? '32px' : '96px' }}>
           <Outlet />
         </main>
 
-        {/* Bottom Nav Mobile */}
         {!isDesktop && (
           <nav style={{ position: 'fixed', bottom: 0, left: 0, right: 0, backgroundColor: '#0f0f0f', borderTop: '1px solid rgba(255,255,255,0.05)', zIndex: 10 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-around', padding: '8px 8px 12px' }}>
