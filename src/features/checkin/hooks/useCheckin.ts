@@ -1,74 +1,60 @@
-import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../../../store/useAuthStore';
 import {
   createCheckin,
   getUserCheckins,
   getStreak,
-  Checkin,
 } from '../../../services/checkinService';
-
-// ✅ Data local sem usar toISOString() — evita bug de timezone em São Paulo
-const getLocalDateString = (): string => {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
+import { getLocalDateString } from '../../../types';
+import { useState } from 'react';
 
 export const useCheckin = () => {
   const { user } = useAuthStore();
-  const [checkins, setCheckins] = useState<Checkin[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [checking, setChecking] = useState(false);
-  const [checkedToday, setCheckedToday] = useState(false);
+  const queryClient = useQueryClient();
+  const uid = user?.uid;
   const [message, setMessage] = useState('');
 
-  useEffect(() => {
-    if (!user) return;
-    load();
-  }, [user]);
+  const query = useQuery({
+    queryKey: ['checkins', uid],
+    queryFn: () => getUserCheckins(uid!),
+    enabled: !!uid,
+    staleTime: 1000 * 60 * 2, // 2 minutos
+  });
 
-  const load = async () => {
-    setLoading(true);
-    const data = await getUserCheckins(user!.uid);
-    const today = getLocalDateString(); // ✅ data local
-    setCheckins(data);
-    setCheckedToday(data.some((c) => c.date === today));
-    setLoading(false);
-  };
-
-  const checkin = async () => {
-    if (!user) return;
-    setChecking(true);
-    const result = await createCheckin(user.uid);
-    if (result === 'already_checked') {
-      setMessage('Você já fez check-in hoje!');
-    } else {
-      setMessage('Check-in realizado!');
-      await load();
-    }
-    setChecking(false);
-    setTimeout(() => setMessage(''), 3000);
-  };
-
+  const checkins = query.data ?? [];
+  const today = getLocalDateString();
+  const checkedToday = checkins.some((c) => c.date === today);
   const streak = getStreak(checkins);
-  const today = new Date();
-  const thisMonthCount = checkins.filter((c) =>
-    c.date.startsWith(
-      `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`
-    )
-  ).length;
+
+  const thisMonthCount = checkins.filter((c) => {
+    const now = new Date();
+    return c.date.startsWith(
+      `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+    );
+  }).length;
+
+  const checkinMutation = useMutation({
+    mutationFn: () => createCheckin(uid!),
+    onSuccess: (result) => {
+      if (result === 'already_checked') {
+        setMessage('Você já fez check-in hoje!');
+      } else {
+        setMessage('Check-in realizado!');
+        queryClient.invalidateQueries({ queryKey: ['checkins', uid] });
+      }
+      setTimeout(() => setMessage(''), 3000);
+    },
+  });
 
   return {
     checkins,
-    loading,
-    checking,
+    loading: query.isLoading,
+    checking: checkinMutation.isPending,
     checkedToday,
     message,
     streak,
     thisMonthCount,
-    checkin,
-    reload: load,
+    checkin: checkinMutation.mutate,
+    reload: query.refetch,
   };
 };

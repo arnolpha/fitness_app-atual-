@@ -1,42 +1,45 @@
-import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../../../store/useAuthStore';
 import {
   createWorkout,
   getUserWorkouts,
   deleteWorkout,
-  Workout,
 } from '../../../services/workoutService';
+import { CreateWorkoutInput } from '../../../types';
 
 export const useWorkouts = () => {
   const { user } = useAuthStore();
-  const [workouts, setWorkouts] = useState<Workout[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const queryClient = useQueryClient();
+  const uid = user?.uid;
 
-  useEffect(() => {
-    if (!user) return;
-    load();
-  }, [user]);
+  const query = useQuery({
+    queryKey: ['workouts', uid],
+    queryFn: () => getUserWorkouts(uid!),
+    enabled: !!uid,
+    staleTime: 1000 * 60 * 5, // 5 minutos
+  });
 
-  const load = async () => {
-    setLoading(true);
-    const data = await getUserWorkouts(user!.uid);
-    setWorkouts(data);
-    setLoading(false);
+  const createMutation = useMutation({
+    mutationFn: (form: CreateWorkoutInput) =>
+      createWorkout({ ...form, userId: uid! }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['workouts', uid] });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => deleteWorkout(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['workouts', uid] });
+    },
+  });
+
+  return {
+    workouts: query.data ?? [],
+    loading: query.isLoading,
+    saving: createMutation.isPending,
+    create: createMutation.mutateAsync,
+    remove: deleteMutation.mutate,
+    reload: query.refetch,
   };
-
-  const create = async (form: Omit<Workout, 'id' | 'userId'>) => {
-    if (!user) return;
-    setSaving(true);
-    await createWorkout({ ...form, userId: user.uid });
-    await load();
-    setSaving(false);
-  };
-
-  const remove = async (id: string) => {
-    await deleteWorkout(id);
-    setWorkouts((prev) => prev.filter((w) => w.id !== id));
-  };
-
-  return { workouts, loading, saving, create, remove, reload: load };
 };
