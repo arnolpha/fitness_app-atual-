@@ -6,30 +6,33 @@ import { logoutUser } from '../services/authService';
 import {
   LayoutDashboard, Dumbbell, ClipboardList, TrendingUp,
   CalendarCheck, User, HelpCircle, Info, LogOut, Menu, History,
+  Trophy, Target,
 } from 'lucide-react';
 import { NotificationBell } from './ui/NotificationBell';
 
 const menuItems = [
-  { path: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { path: '/exercises', label: 'Exercícios', icon: Dumbbell },
-  { path: '/workouts', label: 'Treinos', icon: ClipboardList },
-  { path: '/history', label: 'Histórico', icon: History },
-  { path: '/evolution', label: 'Evolução', icon: TrendingUp },
-  { path: '/checkin', label: 'Check-in', icon: CalendarCheck },
-  { path: '/profile', label: 'Perfil', icon: User },
+  { path: '/',              label: 'Dashboard',   icon: LayoutDashboard },
+  { path: '/exercises',     label: 'Exercícios',  icon: Dumbbell },
+  { path: '/workouts',      label: 'Treinos',     icon: ClipboardList },
+  { path: '/history',       label: 'Histórico',   icon: History },
+  { path: '/evolution',     label: 'Evolução',    icon: TrendingUp },
+  { path: '/checkin',       label: 'Check-in',    icon: CalendarCheck },
+  { path: '/goals',         label: 'Metas',       icon: Target },
+  { path: '/achievements',  label: 'Conquistas',  icon: Trophy },
+  { path: '/profile',       label: 'Perfil',      icon: User },
 ];
 
 const bottomNavItems = [
-  { path: '/', label: 'Home', icon: LayoutDashboard },
-  { path: '/workouts', label: 'Treinos', icon: ClipboardList },
-  { path: '/history', label: 'Histórico', icon: History },
-  { path: '/checkin', label: 'Check-in', icon: CalendarCheck },
-  { path: '/profile', label: 'Perfil', icon: User },
+  { path: '/',             label: 'Home',      icon: LayoutDashboard },
+  { path: '/workouts',     label: 'Treinos',   icon: ClipboardList },
+  { path: '/checkin',      label: 'Check-in',  icon: CalendarCheck },
+  { path: '/goals',        label: 'Metas',     icon: Target },
+  { path: '/achievements', label: 'Conquistas', icon: Trophy },
 ];
 
 const bottomItems = [
   { path: '/help', label: 'Ajuda', icon: HelpCircle },
-  { path: '/info', label: 'Info', icon: Info },
+  { path: '/info', label: 'Info',  icon: Info },
 ];
 
 interface SidebarContentProps {
@@ -109,7 +112,6 @@ const SidebarContent = ({ onClose, onLogout }: SidebarContentProps) => (
 
 const useIsDesktop = () => {
   const [isDesktop, setIsDesktop] = useState(() => window.innerWidth >= 768);
-
   useEffect(() => {
     const mq = window.matchMedia('(min-width: 768px)');
     const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
@@ -117,7 +119,6 @@ const useIsDesktop = () => {
     setIsDesktop(mq.matches);
     return () => mq.removeEventListener('change', handler);
   }, []);
-
   return isDesktop;
 };
 
@@ -137,7 +138,6 @@ export const Layout = () => {
 
   return (
     <div style={{ display: 'flex', height: '100vh', backgroundColor: '#0a0a0a', color: 'white', overflow: 'hidden' }}>
-
       {isDesktop && (
         <aside style={{ width: '256px', backgroundColor: '#0f0f0f', borderRight: '1px solid rgba(255,255,255,0.05)', flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
           <SidebarContent onClose={handleClose} onLogout={handleLogout} />
@@ -146,20 +146,10 @@ export const Layout = () => {
 
       <AnimatePresence>
         {!isDesktop && sidebarOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            style={{ position: 'fixed', inset: 0, zIndex: 20 }}
-          >
-            <div
-              style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)' }}
-              onClick={handleClose}
-            />
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ position: 'fixed', inset: 0, zIndex: 20 }}>
+            <div style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)' }} onClick={handleClose} />
             <motion.aside
-              initial={{ x: '-100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '-100%' }}
+              initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
               style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: '256px', backgroundColor: '#0f0f0f', borderRight: '1px solid rgba(255,255,255,0.05)', zIndex: 30, display: 'flex', flexDirection: 'column' }}
             >
@@ -170,7 +160,6 @@ export const Layout = () => {
       </AnimatePresence>
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-
         {!isDesktop && (
           <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderBottom: '1px solid rgba(255,255,255,0.05)', backgroundColor: '#0f0f0f' }}>
             <button onClick={() => setSidebarOpen(true)} style={{ color: 'rgba(255,255,255,0.6)' }}>
@@ -207,13 +196,11 @@ export const Layout = () => {
                     to={item.path}
                     end={item.path === '/'}
                     className={({ isActive }) =>
-                      `flex flex-col items-center gap-1 px-3 py-1 rounded-xl transition-all ${
-                        isActive ? 'text-green-500' : 'text-white/30'
-                      }`
+                      `flex flex-col items-center gap-1 px-3 py-1 rounded-xl transition-all ${isActive ? 'text-green-500' : 'text-white/30'}`
                     }
                   >
                     <Icon size={22} />
-                    <span style={{ fontSize: '11px', fontWeight: 600 }}>{item.label}</span>
+                    <span style={{ fontSize: '10px', fontWeight: 600 }}>{item.label}</span>
                   </NavLink>
                 );
               })}
