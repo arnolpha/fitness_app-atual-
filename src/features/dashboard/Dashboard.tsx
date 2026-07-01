@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { memo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Play, CalendarCheck, TrendingUp, Clock, Dumbbell, Flame, ChevronRight } from 'lucide-react';
 import { useDashboard } from './hooks/useDashboard';
 import { Card, Button } from '../../components/ui';
 
-/* ---------------- HELPERS ---------------- */
+/* ---------------- HELPERS (fora do componente — não recriam a cada render) ---------------- */
 
 const getGreeting = () => {
   const hour = new Date().getHours();
@@ -14,13 +14,12 @@ const getGreeting = () => {
   return 'Boa noite';
 };
 
-const formatDate = () => {
-  return new Date().toLocaleDateString('pt-BR', {
+const formatDate = () =>
+  new Date().toLocaleDateString('pt-BR', {
     weekday: 'long',
     day: '2-digit',
     month: 'long',
   });
-};
 
 const formatDuration = (seconds: number) => {
   const h = Math.floor(seconds / 3600);
@@ -30,22 +29,77 @@ const formatDuration = (seconds: number) => {
   return `${seconds}s`;
 };
 
-/* ---------------- COMPONENT ---------------- */
+const SHORTCUTS = [
+  { label: 'Histórico',  icon: Clock,        path: '/history' },
+  { label: 'Evolução',   icon: TrendingUp,   path: '/evolution' },
+  { label: 'Exercícios', icon: Dumbbell,     path: '/exercises' },
+  { label: 'Check-in',   icon: CalendarCheck, path: '/checkin' },
+] as const;
 
-export const Dashboard = () => {
+const getStreakInfo = (streak: number) => {
+  if (streak >= 7) return { emoji: '🔥', label: 'Sequência incrível!' };
+  if (streak >= 3) return { emoji: '⚡', label: 'Boa consistência' };
+  if (streak >= 1) return { emoji: '💪', label: 'Começando bem' };
+  return { emoji: '📉', label: 'Hora de voltar' };
+};
+
+/* ---------------- SUB-COMPONENTES MEMOIZADOS ---------------- */
+
+const KpiCards = memo(({ workouts, checkins, streak }: { workouts: number; checkins: number; streak: number }) => (
+  <div className="grid grid-cols-3 gap-3">
+    <Card className="text-center">
+      <p className="text-2xl font-black text-white">{workouts}</p>
+      <p className="text-xs text-white/40 mt-1">Treinos</p>
+    </Card>
+    <Card className="text-center">
+      <p className="text-2xl font-black text-white">{checkins}</p>
+      <p className="text-xs text-white/40 mt-1">Check-ins</p>
+    </Card>
+    <Card className="text-center">
+      <p className="text-2xl font-black text-white">{streak}</p>
+      <p className="text-xs text-white/40 mt-1">Sequência</p>
+    </Card>
+  </div>
+));
+KpiCards.displayName = 'KpiCards';
+
+const StreakCard = memo(({ streak }: { streak: number }) => {
+  const { emoji, label } = getStreakInfo(streak);
+  return (
+    <Card>
+      <div className="flex items-center gap-3">
+        <span className="text-2xl">{emoji}</span>
+        <div>
+          <p className="text-white font-bold text-sm">{label}</p>
+          <p className="text-white/40 text-xs mt-0.5">
+            {streak > 0
+              ? `${streak} dia${streak > 1 ? 's' : ''} consecutivo${streak > 1 ? 's' : ''}`
+              : 'Faça check-in hoje para começar sua sequência'}
+          </p>
+        </div>
+      </div>
+    </Card>
+  );
+});
+StreakCard.displayName = 'StreakCard';
+
+/* ---------------- MAIN COMPONENT ---------------- */
+
+export const Dashboard = memo(() => {
   const navigate = useNavigate();
   const {
     stats,
     progression,
     personalRecord,
     totalTrainingTime,
-    loading,
     checkinLoading,
     checkinMsg,
     checkedToday,
     firstName,
     checkin,
   } = useDashboard();
+
+  const goToWorkouts = useCallback(() => navigate('/workouts'), [navigate]);
 
   return (
     <motion.div
@@ -63,12 +117,8 @@ export const Dashboard = () => {
         </h1>
       </div>
 
-      {/* INICIAR TREINO — destaque principal */}
-      <Button
-        fullWidth
-        onClick={() => navigate('/workouts')}
-        className="py-5 text-base"
-      >
+      {/* INICIAR TREINO */}
+      <Button fullWidth onClick={goToWorkouts} className="py-5 text-base">
         <Play size={20} />
         Iniciar Treino
       </Button>
@@ -76,7 +126,7 @@ export const Dashboard = () => {
       {/* CHECK-IN */}
       <Button
         fullWidth
-        variant={checkedToday ? 'secondary' : 'secondary'}
+        variant="secondary"
         onClick={checkin}
         loading={checkinLoading}
         disabled={checkedToday}
@@ -90,20 +140,11 @@ export const Dashboard = () => {
       )}
 
       {/* KPIs */}
-      <div className="grid grid-cols-3 gap-3">
-        <Card className="text-center">
-          <p className="text-2xl font-black text-white">{stats.workouts}</p>
-          <p className="text-xs text-white/40 mt-1">Treinos</p>
-        </Card>
-        <Card className="text-center">
-          <p className="text-2xl font-black text-white">{stats.checkins}</p>
-          <p className="text-xs text-white/40 mt-1">Check-ins</p>
-        </Card>
-        <Card className="text-center">
-          <p className="text-2xl font-black text-white">{stats.streak}</p>
-          <p className="text-xs text-white/40 mt-1">Sequência</p>
-        </Card>
-      </div>
+      <KpiCards
+        workouts={stats.workouts}
+        checkins={stats.checkins}
+        streak={stats.streak}
+      />
 
       {/* TEMPO TOTAL */}
       {totalTrainingTime > 0 && (
@@ -150,55 +191,33 @@ export const Dashboard = () => {
       )}
 
       {/* STATUS DA SEQUÊNCIA */}
-      <Card>
-        <div className="flex items-center gap-3">
-          <span className="text-2xl">
-            {stats.streak >= 7 ? '🔥' : stats.streak >= 3 ? '⚡' : stats.streak >= 1 ? '💪' : '📉'}
-          </span>
-          <div>
-            <p className="text-white font-bold text-sm">
-              {stats.streak >= 7
-                ? 'Sequência incrível!'
-                : stats.streak >= 3
-                ? 'Boa consistência'
-                : stats.streak >= 1
-                ? 'Começando bem'
-                : 'Hora de voltar'}
-            </p>
-            <p className="text-white/40 text-xs mt-0.5">
-              {stats.streak > 0
-                ? `${stats.streak} dia${stats.streak > 1 ? 's' : ''} consecutivo${stats.streak > 1 ? 's' : ''}`
-                : 'Faça check-in hoje para começar sua sequência'}
-            </p>
-          </div>
-        </div>
-      </Card>
+      <StreakCard streak={stats.streak} />
 
       {/* ATALHOS */}
       <div className="space-y-2">
         <p className="text-white/30 text-xs font-semibold uppercase tracking-widest px-1">Atalhos</p>
         <div className="grid grid-cols-2 gap-3">
-          {[
-            { label: 'Histórico', icon: <Clock size={16} />, path: '/history' },
-            { label: 'Evolução', icon: <TrendingUp size={16} />, path: '/evolution' },
-            { label: 'Exercícios', icon: <Dumbbell size={16} />, path: '/exercises' },
-            { label: 'Check-in', icon: <CalendarCheck size={16} />, path: '/checkin' },
-          ].map((item) => (
-            <Card
-              key={item.path}
-              hover
-              onClick={() => navigate(item.path)}
-              className="flex items-center justify-between"
-            >
-              <div className="flex items-center gap-3">
-                <span className="text-green-400">{item.icon}</span>
-                <span className="text-white text-sm font-semibold">{item.label}</span>
-              </div>
-              <ChevronRight size={14} className="text-white/20" />
-            </Card>
-          ))}
+          {SHORTCUTS.map((item) => {
+            const Icon = item.icon;
+            return (
+              <Card
+                key={item.path}
+                hover
+                onClick={() => navigate(item.path)}
+                className="flex items-center justify-between"
+              >
+                <div className="flex items-center gap-3">
+                  <Icon size={16} className="text-green-400" />
+                  <span className="text-white text-sm font-semibold">{item.label}</span>
+                </div>
+                <ChevronRight size={14} className="text-white/20" />
+              </Card>
+            );
+          })}
         </div>
       </div>
     </motion.div>
   );
-};
+});
+
+Dashboard.displayName = 'Dashboard';
