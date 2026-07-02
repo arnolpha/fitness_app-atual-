@@ -2,18 +2,19 @@ import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
 
-const Login       = lazy(() => import('../pages/Login').then(m => ({ default: m.Login })));
-const Register    = lazy(() => import('../pages/Register').then(m => ({ default: m.Register })));
-const Layout      = lazy(() => import('../components/Layout').then(m => ({ default: m.Layout })));
-const Dashboard   = lazy(() => import('../features/dashboard/Dashboard').then(m => ({ default: m.Dashboard })));
-const Exercises   = lazy(() => import('../features/exercises/Exercises').then(m => ({ default: m.Exercises })));
-const Workouts    = lazy(() => import('../features/workouts/Workouts').then(m => ({ default: m.Workouts })));
-const History     = lazy(() => import('../features/workouts/History').then(m => ({ default: m.History })));
-const Evolution   = lazy(() => import('../features/evolution/Evolution').then(m => ({ default: m.Evolution })));
-const Checkin     = lazy(() => import('../features/checkin/Checkin').then(m => ({ default: m.Checkin })));
-const Profile     = lazy(() => import('../features/profile/Profile').then(m => ({ default: m.Profile })));
+const Login        = lazy(() => import('../pages/Login').then(m => ({ default: m.Login })));
+const Register     = lazy(() => import('../pages/Register').then(m => ({ default: m.Register })));
+const Layout       = lazy(() => import('../components/Layout').then(m => ({ default: m.Layout })));
+const Dashboard    = lazy(() => import('../features/dashboard/Dashboard').then(m => ({ default: m.Dashboard })));
+const Exercises    = lazy(() => import('../features/exercises/Exercises').then(m => ({ default: m.Exercises })));
+const Workouts     = lazy(() => import('../features/workouts/Workouts').then(m => ({ default: m.Workouts })));
+const History      = lazy(() => import('../features/workouts/History').then(m => ({ default: m.History })));
+const Evolution    = lazy(() => import('../features/evolution/Evolution').then(m => ({ default: m.Evolution })));
+const Checkin      = lazy(() => import('../features/checkin/Checkin').then(m => ({ default: m.Checkin })));
+const Profile      = lazy(() => import('../features/profile/Profile').then(m => ({ default: m.Profile })));
 const Achievements = lazy(() => import('../features/achievements/Achievements').then(m => ({ default: m.Achievements })));
 const WeeklyGoals  = lazy(() => import('../features/goals/WeeklyGoals').then(m => ({ default: m.WeeklyGoals })));
+const WeeklyReport = lazy(() => import('../features/report/WeeklyReport').then(m => ({ default: m.WeeklyReport })));
 
 const PageLoader = () => (
   <div className="flex items-center justify-center h-64">
@@ -40,17 +41,18 @@ export const AppRoutes = () => {
           <Route path="/login"    element={!isAuthenticated ? <Login />    : <Navigate to="/" />} />
           <Route path="/register" element={!isAuthenticated ? <Register /> : <Navigate to="/" />} />
           <Route path="/" element={isAuthenticated ? <Layout /> : <Navigate to="/login" />}>
-            <Route index              element={<Dashboard />} />
-            <Route path="exercises"   element={<Exercises />} />
-            <Route path="workouts"    element={<Workouts />} />
-            <Route path="evolution"   element={<Evolution />} />
-            <Route path="checkin"     element={<Checkin />} />
-            <Route path="profile"     element={<Profile />} />
-            <Route path="history"     element={<History />} />
+            <Route index               element={<Dashboard />} />
+            <Route path="exercises"    element={<Exercises />} />
+            <Route path="workouts"     element={<Workouts />} />
+            <Route path="evolution"    element={<Evolution />} />
+            <Route path="checkin"      element={<Checkin />} />
+            <Route path="profile"      element={<Profile />} />
+            <Route path="history"      element={<History />} />
             <Route path="achievements" element={<Achievements />} />
-            <Route path="goals"       element={<WeeklyGoals />} />
-            <Route path="help"        element={<Placeholder title="Ajuda" />} />
-            <Route path="info"        element={<Placeholder title="Info" />} />
+            <Route path="goals"        element={<WeeklyGoals />} />
+            <Route path="report"       element={<WeeklyReport />} />
+            <Route path="help"         element={<Placeholder title="Ajuda" />} />
+            <Route path="info"         element={<Placeholder title="Info" />} />
           </Route>
         </Routes>
       </Suspense>

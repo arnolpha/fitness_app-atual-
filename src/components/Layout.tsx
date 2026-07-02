@@ -6,7 +6,7 @@ import { logoutUser } from '../services/authService';
 import {
   LayoutDashboard, Dumbbell, ClipboardList, TrendingUp,
   CalendarCheck, User, HelpCircle, Info, LogOut, Menu, History,
-  Trophy, Target,
+  Trophy, Target, BarChart2,
 } from 'lucide-react';
 import { NotificationBell } from './ui/NotificationBell';
 
@@ -18,6 +18,7 @@ const menuItems = [
   { path: '/evolution',     label: 'Evolução',    icon: TrendingUp },
   { path: '/checkin',       label: 'Check-in',    icon: CalendarCheck },
   { path: '/goals',         label: 'Metas',       icon: Target },
+  { path: '/report',        label: 'Relatório',   icon: BarChart2 },
   { path: '/achievements',  label: 'Conquistas',  icon: Trophy },
   { path: '/profile',       label: 'Perfil',      icon: User },
 ];
@@ -26,7 +27,7 @@ const bottomNavItems = [
   { path: '/',             label: 'Home',      icon: LayoutDashboard },
   { path: '/workouts',     label: 'Treinos',   icon: ClipboardList },
   { path: '/checkin',      label: 'Check-in',  icon: CalendarCheck },
-  { path: '/goals',        label: 'Metas',     icon: Target },
+  { path: '/report',       label: 'Relatório', icon: BarChart2 },
   { path: '/achievements', label: 'Conquistas', icon: Trophy },
 ];
 
