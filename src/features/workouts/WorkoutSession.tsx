@@ -3,13 +3,15 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '../../store/useAuthStore';
 import { getUserExercises, Exercise } from '../../services/exerciseService';
 import { saveSession, Serie } from '../../services/sessionService';
+import { getUserSessions } from '../../services/sessionService';
+import { getUserCheckins, getStreak } from '../../services/checkinService';
+import { checkAndUnlockAchievements, getAchievements } from '../../services/achievementService';
+import { ACHIEVEMENTS } from '../../types/achievements';
 import { Workout } from '../../services/workoutService';
+import { useToast } from '../../components/Toast';
+import { useQueryClient } from '@tanstack/react-query';
 import {
-  Timer,
-  CheckCircle,
-  X,
-  Coffee,
-  ChevronDown,
+  Timer, CheckCircle, X, Coffee, ChevronDown,
 } from 'lucide-react';
 import { Button, Card } from '../../components/ui';
 
@@ -49,6 +51,9 @@ const REST_OPTIONS = [
 
 export const WorkoutSession = ({ workout, onFinish, onCancel }: Props) => {
   const { user } = useAuthStore();
+  const toast = useToast();
+  const queryClient = useQueryClient();
+
   const [seconds, setSeconds] = useState(0);
   const [entries, setEntries] = useState<ExerciseEntry[]>([]);
   const [saving, setSaving] = useState(false);
@@ -58,12 +63,12 @@ export const WorkoutSession = ({ workout, onFinish, onCancel }: Props) => {
   const [restActive, setRestActive] = useState(false);
   const [showRestConfig, setShowRestConfig] = useState(false);
   const [restored, setRestored] = useState(false);
+
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const restRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   /* ---------------- PERSISTÊNCIA ---------------- */
 
-  // Salva sessão no localStorage sempre que mudar
   useEffect(() => {
     if (loading || entries.length === 0) return;
     const data: PersistedSession = {
@@ -75,7 +80,6 @@ export const WorkoutSession = ({ workout, onFinish, onCancel }: Props) => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   }, [seconds, entries, loading]);
 
-  // Limpa ao desmontar sem finalizar (cancel)
   const clearStorage = () => localStorage.removeItem(STORAGE_KEY);
 
   /* ---------------- LOAD ---------------- */
@@ -87,13 +91,10 @@ export const WorkoutSession = ({ workout, onFinish, onCancel }: Props) => {
 
   const loadExercises = async () => {
     setLoading(true);
-
-    // Tenta restaurar sessão salva
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const saved: PersistedSession = JSON.parse(raw);
-        // Só restaura se for o mesmo treino e tiver menos de 4h
         const age = Date.now() - saved.savedAt;
         if (saved.workoutId === workout.id && age < 4 * 60 * 60 * 1000) {
           setEntries(saved.entries);
@@ -109,7 +110,6 @@ export const WorkoutSession = ({ workout, onFinish, onCancel }: Props) => {
       clearStorage();
     }
 
-    // Carrega normalmente
     const allExercises = await getUserExercises(user!.uid);
     const workoutExercises = allExercises.filter((ex) =>
       workout.exercises.includes(ex.id!)
@@ -229,6 +229,39 @@ export const WorkoutSession = ({ workout, onFinish, onCancel }: Props) => {
     });
 
     clearStorage();
+
+    // ✅ Verificar conquistas após finalizar treino
+    try {
+      const [sessions, checkins, achievementsDoc] = await Promise.all([
+        getUserSessions(user.uid),
+        getUserCheckins(user.uid),
+        getAchievements(user.uid),
+      ]);
+
+      const newlyUnlocked = await checkAndUnlockAchievements(user.uid, {
+        workouts: sessions.length,
+        checkins: checkins.length,
+        streak: getStreak(checkins),
+        weeklyGoalsCompleted: achievementsDoc?.weeklyGoalsCompleted ?? 0,
+      });
+
+      if (newlyUnlocked.length > 0) {
+        queryClient.invalidateQueries({ queryKey: ['achievements', user.uid] });
+        for (const id of newlyUnlocked) {
+          const achievement = ACHIEVEMENTS.find((a) => a.id === id);
+          if (achievement) {
+            setTimeout(() => {
+              toast.success(`${achievement.emoji} ${achievement.title} desbloqueado!`);
+            }, 600);
+          }
+        }
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['dashboard', user.uid] });
+    } catch (e) {
+      console.error('Erro ao verificar conquistas:', e);
+    }
+
     setSaving(false);
     onFinish();
   };
@@ -466,12 +499,7 @@ export const WorkoutSession = ({ workout, onFinish, onCancel }: Props) => {
       )}
 
       {/* Finalizar */}
-      <Button
-        onClick={handleFinish}
-        loading={saving}
-        fullWidth
-        className="py-4"
-      >
+      <Button onClick={handleFinish} loading={saving} fullWidth className="py-4">
         <CheckCircle size={18} />
         Finalizar Treino
       </Button>
